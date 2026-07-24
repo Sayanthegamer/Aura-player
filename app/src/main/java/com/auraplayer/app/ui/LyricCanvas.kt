@@ -76,42 +76,20 @@ fun LyricCanvas(
     onSeek: (Long) -> Unit = {},
     isLoading: Boolean = false,
     trackTitle: String = "",
-    artworkUri: String? = null
+    artworkUri: String? = null,
+    // Pre-resolved palette colors passed from parent so there is no default-flash on navigation
+    paletteAccent: Color = Color(0xFFD0BCFF),
+    paletteDominant: Color = Color(0xFF1E1B2E),
+    paletteSecondary: Color = Color(0xFF381E72)
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val listState = rememberLazyListState()
     var showOffsetSlider by remember { mutableStateOf(false) }
 
-    // Dynamic Palette Color extraction from artwork
-    var dominantColor by remember { mutableStateOf(Color(0xFF1E1B2E)) }
-    var accentColor by remember { mutableStateOf(Color(0xFFD0BCFF)) }
-    var secondaryColor by remember { mutableStateOf(Color(0xFF381E72)) }
-
-    LaunchedEffect(artworkUri) {
-        if (!artworkUri.isNullOrEmpty()) {
-            val request = coil.request.ImageRequest.Builder(context)
-                .data(artworkUri)
-                .allowHardware(false)
-                .build()
-            val result = (coil.ImageLoader(context).execute(request) as? coil.request.SuccessResult)?.drawable
-            if (result is android.graphics.drawable.BitmapDrawable) {
-                val bitmap = result.bitmap
-                androidx.palette.graphics.Palette.from(bitmap).generate { palette ->
-                    palette?.let { p ->
-                        p.getDominantColor(android.graphics.Color.parseColor("#1E1B2E")).let {
-                            dominantColor = Color(it)
-                        }
-                        p.getVibrantColor(p.getLightVibrantColor(android.graphics.Color.parseColor("#D0BCFF"))).let {
-                            accentColor = Color(it)
-                        }
-                        p.getMutedColor(p.getDarkMutedColor(android.graphics.Color.parseColor("#381E72"))).let {
-                            secondaryColor = Color(it)
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // Use parent-supplied palette colors directly (already animated in parent)
+    val dominantColor = paletteDominant
+    val accentColor = paletteAccent
+    val secondaryColor = paletteSecondary
 
     val themeColorScheme = MaterialTheme.colorScheme
     val primaryAccent = if (accentColor != Color(0xFFD0BCFF)) accentColor else themeColorScheme.primary
@@ -231,20 +209,23 @@ fun LyricCanvas(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                     Text(
                         text = "ETHEREAL LYRICS • ${lyrics.source.uppercase()}",
                         color = primaryAccent,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 2.5.sp
+                        letterSpacing = 2.5.sp,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                     Text(
-                        text = if (trackTitle.isNotBlank()) trackTitle else "Apple Music View",
+                        text = if (trackTitle.isNotBlank()) trackTitle else "Lyrics",
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
 

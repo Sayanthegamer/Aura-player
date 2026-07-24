@@ -9,6 +9,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -25,6 +28,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.auraplayer.app.data.AppSettings
@@ -92,6 +96,50 @@ class MainActivity : ComponentActivity() {
                 var isFetchingLyrics by remember { mutableStateOf(false) }
                 var manualOffsetMs by remember { mutableStateOf(0L) }
                 val coroutineScope = rememberCoroutineScope()
+
+                // ── Palette extraction lives here (once) so PlayerScreen & LyricCanvas
+                //    receive already-animated colors and never flash the default lavender.
+                val context = androidx.compose.ui.platform.LocalContext.current
+                var rawDominant by remember { mutableStateOf(Color(0xFF1E1B2E)) }
+                var rawAccent   by remember { mutableStateOf(Color(0xFFD0BCFF)) }
+                var rawSecondary by remember { mutableStateOf(Color(0xFF381E72)) }
+
+                LaunchedEffect(uiState.currentTrack?.artworkUri) {
+                    val artworkUri = uiState.currentTrack?.artworkUri
+                    if (!artworkUri.isNullOrEmpty()) {
+                        val request = coil.request.ImageRequest.Builder(context)
+                            .data(artworkUri)
+                            .allowHardware(false)
+                            .build()
+                        val result = (coil.ImageLoader(context).execute(request) as? coil.request.SuccessResult)?.drawable
+                        if (result is android.graphics.drawable.BitmapDrawable) {
+                            val bitmap = result.bitmap
+                            androidx.palette.graphics.Palette.from(bitmap).generate { palette ->
+                                palette?.let { p ->
+                                    rawDominant = Color(p.getDominantColor(android.graphics.Color.parseColor("#1E1B2E")))
+                                    rawAccent = Color(p.getVibrantColor(p.getLightVibrantColor(android.graphics.Color.parseColor("#D0BCFF"))))
+                                    rawSecondary = Color(p.getMutedColor(p.getDarkMutedColor(android.graphics.Color.parseColor("#381E72"))))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                val animatedDominant by animateColorAsState(
+                    targetValue = rawDominant,
+                    animationSpec = tween(1000, easing = LinearEasing),
+                    label = "dominant"
+                )
+                val animatedAccent by animateColorAsState(
+                    targetValue = rawAccent,
+                    animationSpec = tween(1000, easing = LinearEasing),
+                    label = "accent"
+                )
+                val animatedSecondary by animateColorAsState(
+                    targetValue = rawSecondary,
+                    animationSpec = tween(1000, easing = LinearEasing),
+                    label = "secondary"
+                )
 
                 LaunchedEffect(playerManager.player.audioSessionId) {
                     val sessionId = playerManager.player.audioSessionId
@@ -217,7 +265,10 @@ class MainActivity : ComponentActivity() {
                                     onNextTrack = { playerManager.skipToNext() },
                                     onPrevTrack = { playerManager.skipToPrevious() },
                                     onAlbumArtTap = { currentScreen = Screen.Lyrics },
-                                    onOpenAudioDsp = { showDspBottomSheet = true }
+                                    onOpenAudioDsp = { showDspBottomSheet = true },
+                                    paletteAccent = animatedAccent,
+                                    paletteDominant = animatedDominant,
+                                    paletteSecondary = animatedSecondary
                                 )
                             }
                             is Screen.Lyrics -> {
@@ -237,7 +288,10 @@ class MainActivity : ComponentActivity() {
                                     onSeek = { targetMs -> playerManager.seekTo(targetMs) },
                                     isLoading = isFetchingLyrics,
                                     trackTitle = uiState.currentTrack?.title ?: "",
-                                    artworkUri = uiState.currentTrack?.artworkUri
+                                    artworkUri = uiState.currentTrack?.artworkUri,
+                                    paletteAccent = animatedAccent,
+                                    paletteDominant = animatedDominant,
+                                    paletteSecondary = animatedSecondary
                                 )
                             }
                         }

@@ -1,6 +1,5 @@
 package com.auraplayer.app.ui
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -67,58 +66,19 @@ fun PlayerScreen(
     onPrevTrack: () -> Unit,
     onAlbumArtTap: () -> Unit,
     onOpenAudioDsp: () -> Unit,
+    // Pre-resolved palette colors from MainActivity so no default-flash on navigation
+    paletteAccent: Color = Color(0xFFD0BCFF),
+    paletteDominant: Color = Color(0xFF1E1B2E),
+    paletteSecondary: Color = Color(0xFF381E72),
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val track = uiState.currentTrack
 
-    // Extract dynamic colors from album artwork using Palette
-    var dominantColor by remember { mutableStateOf(Color(0xFF1E1B2E)) }
-    var accentColor by remember { mutableStateOf(Color(0xFFD0BCFF)) }
-    var secondaryColor by remember { mutableStateOf(Color(0xFF381E72)) }
-
-    LaunchedEffect(track?.artworkUri) {
-        if (!track?.artworkUri.isNullOrEmpty()) {
-            val request = ImageRequest.Builder(context)
-                .data(track?.artworkUri)
-                .allowHardware(false)
-                .build()
-            val result = (coil.ImageLoader(context).execute(request) as? coil.request.SuccessResult)?.drawable
-            if (result is android.graphics.drawable.BitmapDrawable) {
-                val bitmap = result.bitmap
-                androidx.palette.graphics.Palette.from(bitmap).generate { palette ->
-                    palette?.let { p ->
-                        p.getDominantColor(android.graphics.Color.parseColor("#1E1B2E")).let {
-                            dominantColor = Color(it)
-                        }
-                        p.getVibrantColor(p.getLightVibrantColor(android.graphics.Color.parseColor("#D0BCFF"))).let {
-                            accentColor = Color(it)
-                        }
-                        p.getMutedColor(p.getDarkMutedColor(android.graphics.Color.parseColor("#381E72"))).let {
-                            secondaryColor = Color(it)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Animate color transitions smoothly when track changes
-    val animatedDominant by animateColorAsState(
-        targetValue = dominantColor,
-        animationSpec = tween(1000, easing = LinearEasing),
-        label = "animatedDominant"
-    )
-    val animatedAccent by animateColorAsState(
-        targetValue = accentColor,
-        animationSpec = tween(1000, easing = LinearEasing),
-        label = "animatedAccent"
-    )
-    val animatedSecondary by animateColorAsState(
-        targetValue = secondaryColor,
-        animationSpec = tween(1000, easing = LinearEasing),
-        label = "animatedSecondary"
-    )
+    // Colors arrive pre-animated from MainActivity — no second tween needed
+    val animatedDominant = paletteDominant
+    val animatedAccent = paletteAccent
+    val animatedSecondary = paletteSecondary
 
     // Continuous Brownian Motion Animation for super-blurred background orbs
     val transition = rememberInfiniteTransition(label = "brownianMotion")
