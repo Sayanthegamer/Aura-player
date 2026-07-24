@@ -7,11 +7,11 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 1.2: Core ExoPlayer & Media3 Service
-- [ ] Task: Implement `PlaybackService` extending Media3 `MediaSessionService` with foreground service handling.
-- [ ] Task: Create `PlayerManager` wrapping `ExoPlayer` instance with explicit `AudioAttributes` (`C.USAGE_MEDIA`, `C.AUDIO_CONTENT_TYPE_MUSIC`), `handleAudioFocus = true`, noisy audio receiver, state management, progress flows, and volume control.
-- [ ] Task: Write unit tests for `PlayerManager` playback state changes, audio focus handling, and position reporting.
-- [ ] Task: Build Compose UI main player screen (album art, title/artist display, playback controls, progress slider).
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Implement `PlaybackService` extending Media3 `MediaSessionService` with foreground service handling. (95e415d)
+- [x] Task: Create `PlayerManager` wrapping `ExoPlayer` instance with explicit `AudioAttributes` (`C.USAGE_MEDIA`, `C.AUDIO_CONTENT_TYPE_MUSIC`), `handleAudioFocus = true`, noisy audio receiver, state management, progress flows, and volume control. (95e415d)
+- [x] Task: Write unit tests for `PlayerManager` playback state changes, audio focus handling, and position reporting. (95e415d)
+- [x] Task: Build Compose UI main player screen (album art, title/artist display, playback controls, progress slider). (95e415d)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 1.3: ReplayGain & Audio Metadata Extraction
 - [ ] Task: Implement `MetadataExtractor` using `jaudiotagger` for sample rate, bitrate, codec, `REPLAYGAIN_TRACK_GAIN`, and `REPLAYGAIN_TRACK_PEAK`.
