@@ -1,8 +1,14 @@
 package com.auraplayer.app.ui
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,8 +49,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontStyle
@@ -67,11 +75,69 @@ fun LyricCanvas(
     onClose: () -> Unit,
     onSeek: (Long) -> Unit = {},
     isLoading: Boolean = false,
-    trackTitle: String = ""
+    trackTitle: String = "",
+    artworkUri: String? = null
 ) {
-    val colorScheme = MaterialTheme.colorScheme
+    val context = androidx.compose.ui.platform.LocalContext.current
     val listState = rememberLazyListState()
     var showOffsetSlider by remember { mutableStateOf(false) }
+
+    // Dynamic Palette Color extraction from artwork
+    var dominantColor by remember { mutableStateOf(Color(0xFF1E1B2E)) }
+    var accentColor by remember { mutableStateOf(Color(0xFFD0BCFF)) }
+    var secondaryColor by remember { mutableStateOf(Color(0xFF381E72)) }
+
+    LaunchedEffect(artworkUri) {
+        if (!artworkUri.isNullOrEmpty()) {
+            val request = coil.request.ImageRequest.Builder(context)
+                .data(artworkUri)
+                .allowHardware(false)
+                .build()
+            val result = (coil.ImageLoader(context).execute(request) as? coil.request.SuccessResult)?.drawable
+            if (result is android.graphics.drawable.BitmapDrawable) {
+                val bitmap = result.bitmap
+                androidx.palette.graphics.Palette.from(bitmap).generate { palette ->
+                    palette?.let { p ->
+                        p.getDominantColor(android.graphics.Color.parseColor("#1E1B2E")).let {
+                            dominantColor = Color(it)
+                        }
+                        p.getVibrantColor(p.getLightVibrantColor(android.graphics.Color.parseColor("#D0BCFF"))).let {
+                            accentColor = Color(it)
+                        }
+                        p.getMutedColor(p.getDarkMutedColor(android.graphics.Color.parseColor("#381E72"))).let {
+                            secondaryColor = Color(it)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    val themeColorScheme = MaterialTheme.colorScheme
+    val primaryAccent = if (accentColor != Color(0xFFD0BCFF)) accentColor else themeColorScheme.primary
+    val secondaryAccent = if (secondaryColor != Color(0xFF381E72)) secondaryColor else themeColorScheme.secondary
+    val dominantBg = if (dominantColor != Color(0xFF1E1B2E)) dominantColor else themeColorScheme.background
+
+    // Continuous Brownian Motion Animation for super-blurred background orbs
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "lyricBrownian")
+    val rawAnim1 by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(16000, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "brownian1"
+    )
+    val rawAnim2 by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(20000, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "brownian2"
+    )
 
     val activeIndex by remember(lyrics.lines, manualOffsetMs) {
         derivedStateOf {
@@ -93,38 +159,64 @@ fun LyricCanvas(
         }
     }
 
-    val ambientGradient = remember(colorScheme.primary, colorScheme.tertiary) {
-        Brush.verticalGradient(
-            colors = listOf(
-                colorScheme.surface.copy(alpha = 0.95f),
-                colorScheme.primaryContainer.copy(alpha = 0.40f),
-                colorScheme.surface
-            )
-        )
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ambientGradient)
+            .background(dominantBg)
     ) {
-        // Ethereal Glow Orbs
-        Box(
+        // Super Blurred Brownian Motion Gradient Blobs
+        androidx.compose.foundation.Canvas(
             modifier = Modifier
-                .size(340.dp)
-                .align(Alignment.TopEnd)
-                .graphicsLayer { alpha = 0.25f }
-                .blur(85.dp)
-                .background(colorScheme.primary)
-        )
-        Box(
-            modifier = Modifier
-                .size(380.dp)
-                .align(Alignment.BottomStart)
-                .graphicsLayer { alpha = 0.20f }
-                .blur(95.dp)
-                .background(colorScheme.tertiary)
-        )
+                .fillMaxSize()
+                .graphicsLayer {
+                    renderEffect = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                        android.graphics.RenderEffect.createBlurEffect(
+                            140f, 140f,
+                            android.graphics.Shader.TileMode.MIRROR
+                        ).asComposeRenderEffect()
+                    } else null
+                }
+        ) {
+            val canvasW = size.width
+            val canvasH = size.height
+
+            // Orb 1: Top Brownian Float
+            val orb1X = canvasW * (0.25f + 0.5f * rawAnim1)
+            val orb1Y = canvasH * (0.2f + 0.35f * rawAnim2)
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(primaryAccent.copy(alpha = 0.85f), Color.Transparent),
+                    center = Offset(orb1X, orb1Y),
+                    radius = canvasW * 0.9f
+                ),
+                center = Offset(orb1X, orb1Y),
+                radius = canvasW * 0.9f
+            )
+
+            // Orb 2: Bottom Brownian Float
+            val orb2X = canvasW * (0.75f - 0.5f * rawAnim2)
+            val orb2Y = canvasH * (0.8f - 0.35f * rawAnim1)
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(secondaryAccent.copy(alpha = 0.85f), Color.Transparent),
+                    center = Offset(orb2X, orb2Y),
+                    radius = canvasW * 1.0f
+                ),
+                center = Offset(orb2X, orb2Y),
+                radius = canvasW * 1.0f
+            )
+
+            // Dark vignette overlay for 100% lyric readability
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Black.copy(alpha = 0.60f),
+                        Color.Black.copy(alpha = 0.35f),
+                        Color.Black.copy(alpha = 0.70f)
+                    )
+                )
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -142,14 +234,14 @@ fun LyricCanvas(
                 Column {
                     Text(
                         text = "ETHEREAL LYRICS • ${lyrics.source.uppercase()}",
-                        color = colorScheme.primary,
+                        color = primaryAccent,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 2.5.sp
                     )
                     Text(
                         text = if (trackTitle.isNotBlank()) trackTitle else "Apple Music View",
-                        color = colorScheme.onBackground,
+                        color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
@@ -161,14 +253,14 @@ fun LyricCanvas(
                         Icon(
                             imageVector = Icons.Default.Tune,
                             contentDescription = "Adjust Lyric Offset",
-                            tint = if (showOffsetSlider) colorScheme.primary else colorScheme.onSurface
+                            tint = if (showOffsetSlider) primaryAccent else Color.White
                         )
                     }
                     IconButton(onClick = onClose) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close Lyrics",
-                            tint = colorScheme.onSurface
+                            tint = Color.White
                         )
                     }
                 }
@@ -177,7 +269,7 @@ fun LyricCanvas(
             // Manual Offset Slider
             if (showOffsetSlider) {
                 Surface(
-                    color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
+                    color = themeColorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -190,13 +282,13 @@ fun LyricCanvas(
                         ) {
                             Text(
                                 text = "Manual Sync Offset",
-                                color = colorScheme.onSurface,
+                                color = themeColorScheme.onSurface,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 text = "${if (manualOffsetMs >= 0) "+" else ""}${manualOffsetMs} ms",
-                                color = colorScheme.primary,
+                                color = primaryAccent,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -207,9 +299,9 @@ fun LyricCanvas(
                             onValueChange = { onOffsetChange(it.toLong()) },
                             valueRange = -5000f..5000f,
                             colors = SliderDefaults.colors(
-                                thumbColor = colorScheme.primary,
-                                activeTrackColor = colorScheme.primary,
-                                inactiveTrackColor = colorScheme.surfaceContainerHighest
+                                thumbColor = primaryAccent,
+                                activeTrackColor = primaryAccent,
+                                inactiveTrackColor = themeColorScheme.surfaceContainerHighest
                             )
                         )
                     }
@@ -226,13 +318,13 @@ fun LyricCanvas(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator(
-                            color = colorScheme.primary,
+                            color = primaryAccent,
                             modifier = Modifier.size(44.dp)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "Fetching synced lyrics from LRCLIB & LyricsPlus...",
-                            color = colorScheme.onSurfaceVariant,
+                            color = Color.White.copy(alpha = 0.75f),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -245,7 +337,7 @@ fun LyricCanvas(
                 ) {
                     Text(
                         text = "No synced lyrics available for this track",
-                        color = colorScheme.onSurfaceVariant,
+                        color = Color.White.copy(alpha = 0.75f),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -290,7 +382,7 @@ fun LyricCanvas(
                                 line = line,
                                 currentPositionMs = currentPositionMs,
                                 isActive = index == activeIndex,
-                                colorScheme = colorScheme
+                                primaryAccent = primaryAccent
                             )
                         }
                     }
@@ -306,7 +398,7 @@ private fun AppleMusicWordLine(
     line: LyricLine,
     currentPositionMs: Long,
     isActive: Boolean,
-    colorScheme: ColorScheme
+    primaryAccent: Color
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         if (line.wordTokens.isEmpty()) {
@@ -316,11 +408,11 @@ private fun AppleMusicWordLine(
                 animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioLowBouncy),
                 label = "lineScale"
             )
-            val shadowColor = colorScheme.primary.copy(alpha = if (isActive) 0.85f else 0f)
+            val shadowColor = primaryAccent.copy(alpha = if (isActive) 0.85f else 0f)
 
             Text(
                 text = line.content,
-                color = if (isActive) Color.White else colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                color = if (isActive) Color.White else Color.White.copy(alpha = 0.45f),
                 fontSize = 28.sp,
                 fontWeight = if (isActive) FontWeight.Black else FontWeight.Bold,
                 lineHeight = 36.sp,
@@ -363,14 +455,13 @@ private fun AppleMusicWordLine(
                     val progress = if (isCurrentWord) {
                         ((currentPositionMs - token.startMs).toFloat() / wordDurationMs.toFloat()).coerceIn(0f, 1f)
                     } else if (isPastWord) 1f else 0f
-
                     val wordColor = lerp(
-                        colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        Color.White.copy(alpha = 0.45f),
                         Color.White,
                         progress
                     )
 
-                    val shadowColor = colorScheme.primary.copy(alpha = if (isCurrentWord) 0.8f else 0f)
+                    val shadowColor = primaryAccent.copy(alpha = if (isCurrentWord) 0.85f else 0f)
 
                     Text(
                         text = token.word,
@@ -398,7 +489,7 @@ private fun AppleMusicWordLine(
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = subText,
-                color = if (isActive) colorScheme.primary else colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                color = if (isActive) primaryAccent else Color.White.copy(alpha = 0.45f),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Medium,
                 fontStyle = FontStyle.Italic,

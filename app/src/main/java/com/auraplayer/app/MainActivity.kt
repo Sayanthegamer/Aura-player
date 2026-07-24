@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
         settingsPreferences = SettingsPreferences(this)
         lrclibRepository = LrclibRepository(db.lyricDao())
         playerManager = PlayerManager(this)
+        val audioDspManager = com.auraplayer.app.audio.AudioDspManager(this)
 
         setContent {
             val settings by settingsPreferences.settingsFlow.collectAsState(initial = AppSettings())
@@ -79,16 +80,25 @@ class MainActivity : ComponentActivity() {
 
             AuraTheme(darkTheme = darkTheme, dynamicColor = settings.dynamicColor) {
                 val uiState by playerManager.uiState.collectAsState()
+                val dspState by audioDspManager.dspState.collectAsState()
                 val tracks by musicRepository.getAllTracks().collectAsState(initial = emptyList())
                 val albums by musicRepository.getAllAlbums().collectAsState(initial = emptyList())
                 val artists by musicRepository.getAllArtists().collectAsState(initial = emptyList())
                 val scanState by musicRepository.scanState.collectAsState()
 
                 var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
+                var showDspBottomSheet by remember { mutableStateOf(false) }
                 var sampleLyrics by remember { mutableStateOf(ParsedLyrics()) }
                 var isFetchingLyrics by remember { mutableStateOf(false) }
                 var manualOffsetMs by remember { mutableStateOf(0L) }
                 val coroutineScope = rememberCoroutineScope()
+
+                LaunchedEffect(playerManager.player.audioSessionId) {
+                    val sessionId = playerManager.player.audioSessionId
+                    if (sessionId != 0) {
+                        audioDspManager.attachToAudioSession(sessionId)
+                    }
+                }
 
                 LaunchedEffect(uiState.currentTrack?.id, uiState.currentTrack?.embeddedLyrics) {
                     uiState.currentTrack?.let { track ->
@@ -206,7 +216,8 @@ class MainActivity : ComponentActivity() {
                                     onSeek = { position -> playerManager.seekTo(position) },
                                     onNextTrack = { playerManager.skipToNext() },
                                     onPrevTrack = { playerManager.skipToPrevious() },
-                                    onAlbumArtTap = { currentScreen = Screen.Lyrics }
+                                    onAlbumArtTap = { currentScreen = Screen.Lyrics },
+                                    onOpenAudioDsp = { showDspBottomSheet = true }
                                 )
                             }
                             is Screen.Lyrics -> {
@@ -225,10 +236,23 @@ class MainActivity : ComponentActivity() {
                                     onClose = { currentScreen = Screen.FullPlayer },
                                     onSeek = { targetMs -> playerManager.seekTo(targetMs) },
                                     isLoading = isFetchingLyrics,
-                                    trackTitle = uiState.currentTrack?.title ?: ""
+                                    trackTitle = uiState.currentTrack?.title ?: "",
+                                    artworkUri = uiState.currentTrack?.artworkUri
                                 )
                             }
                         }
+                    }
+
+                    if (showDspBottomSheet) {
+                        com.auraplayer.app.ui.AudioDspBottomSheet(
+                            dspState = dspState,
+                            onToggleEnabled = { enabled -> audioDspManager.setEnabled(enabled) },
+                            onSelectPreset = { preset -> audioDspManager.setPreset(preset) },
+                            onBandGainChanged = { bandIdx, gain -> audioDspManager.setBandGain(bandIdx, gain) },
+                            onBassBoostChanged = { gain -> audioDspManager.setBassBoost(gain) },
+                            onTrebleChanged = { gain -> audioDspManager.setTreble(gain) },
+                            onDismissRequest = { showDspBottomSheet = false }
+                        )
                     }
                 }
             }
