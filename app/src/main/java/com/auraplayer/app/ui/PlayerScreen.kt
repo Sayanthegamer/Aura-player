@@ -445,3 +445,69 @@ private fun formatTimeMs(timeMs: Long): String {
     val seconds = totalSeconds % 60
     return String.format("%02d:%02d", minutes, seconds)
 }
+
+@Composable
+fun BouncyIconButton(
+    onClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.84f else 1.0f,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioMediumBouncy
+        ),
+        label = "btnScale"
+    )
+
+    Box(
+        modifier = Modifier
+            .scale(scale)
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun AnimatedEqualizerBars(tint: Color) {
+    val transition = rememberInfiniteTransition(label = "eqBars")
+
+    val h1 by transition.animateFloat(
+        initialValue = 4f, targetValue = 18f,
+        animationSpec = infiniteRepeatable(tween(450, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h1"
+    )
+    val h2 by transition.animateFloat(
+        initialValue = 18f, targetValue = 6f,
+        animationSpec = infiniteRepeatable(tween(350, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h2"
+    )
+    val h3 by transition.animateFloat(
+        initialValue = 6f, targetValue = 22f,
+        animationSpec = infiniteRepeatable(tween(550, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h3"
+    )
+    val h4 by transition.animateFloat(
+        initialValue = 20f, targetValue = 4f,
+        animationSpec = infiniteRepeatable(tween(400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h4"
+    )
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier.height(24.dp)
+    ) {
+        Box(modifier = Modifier.width(4.dp).height(h1.dp).background(tint, CircleShape))
+        Box(modifier = Modifier.width(4.dp).height(h2.dp).background(tint, CircleShape))
+        Box(modifier = Modifier.width(4.dp).height(h3.dp).background(tint, CircleShape))
+        Box(modifier = Modifier.width(4.dp).height(h4.dp).background(tint, CircleShape))
+    }
+}
+
