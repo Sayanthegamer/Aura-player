@@ -2,6 +2,7 @@ package com.auraplayer.app.ui
 
 import android.graphics.Bitmap
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -10,8 +11,11 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -39,17 +43,11 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import coil.compose.SubcomposeAsyncImage
-import coil.request.ImageRequest
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,52 +57,55 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.auraplayer.app.playback.PlayerUiState
+
+data class DynamicThemeColors(
+    val dominantBg: Color,
+    val primaryAccent: Color,
+    val secondaryAccent: Color,
+    val surfaceContainer: Color,
+    val secondaryBg: Color
+)
 
 @Composable
 fun PlayerScreen(
     uiState: PlayerUiState,
-    artworkBitmap: Bitmap? = null,
-    onBack: () -> Unit = {},
+    onBack: () -> Unit,
     onPlayPauseToggle: () -> Unit,
     onSeek: (Long) -> Unit,
-    onNextTrack: () -> Unit = {},
-    onPrevTrack: () -> Unit = {},
-    onAlbumArtTap: () -> Unit = {}
+    onNextTrack: () -> Unit,
+    onPrevTrack: () -> Unit,
+    onAlbumArtTap: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val track = uiState.currentTrack
-    val dynamicColors = rememberArtworkColors(artworkBitmap)
 
-    // Ambient Animated Aura Gradient Pulsing
-    val infiniteTransition = rememberInfiniteTransition(label = "auraTransition")
-    val auraScale by infiniteTransition.animateFloat(
-        initialValue = 1.0f,
-        targetValue = 1.28f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(4000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "auraScale"
-    )
-    val auraAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 0.65f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "auraAlpha"
-    )
+    val dynamicColors = remember(track?.id) {
+        DynamicThemeColors(
+            dominantBg = Color(0xFF0F0D15),
+            primaryAccent = Color(0xFFFF4081),
+            secondaryAccent = Color(0xFF00E5FF),
+            surfaceContainer = Color(0xFF1E1A29),
+            secondaryBg = Color(0xFF14101F)
+        )
+    }
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         color = dynamicColors.dominantBg
     ) {
         Box(
@@ -113,160 +114,118 @@ fun PlayerScreen(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            dynamicColors.secondaryBg,
+                            dynamicColors.secondaryBg.copy(alpha = 0.8f),
                             dynamicColors.dominantBg,
-                            Color(0xFF0A090D)
+                            dynamicColors.dominantBg
                         )
                     )
                 )
         ) {
-            // Dynamic Artwork Ambient Glow Orb
-            Box(
-                modifier = Modifier
-                    .size(340.dp)
-                    .align(Alignment.TopCenter)
-                    .padding(top = 70.dp)
-                    .scale(auraScale)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                dynamicColors.primaryAccent.copy(alpha = auraAlpha * 0.7f),
-                                dynamicColors.secondaryAccent.copy(alpha = auraAlpha * 0.4f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = CircleShape
-                    )
-            )
-
-            // Main Player Layout
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Pixel Expressive Top Bar
+                // Top Bar
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp),
+                        .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = "Back to Home",
-                                tint = Color.White,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Column {
-                            Text(
-                                text = "AURA PLAYER",
-                                color = dynamicColors.primaryAccent,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 2.5.sp
-                            )
-                            Text(
-                                text = "Now Playing",
-                                color = Color.White,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Collapse Player",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
                     }
 
-                    Surface(
-                        color = dynamicColors.surfaceContainer.copy(alpha = 0.85f),
-                        shape = CircleShape,
-                        shadowElevation = 6.dp
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.GraphicEq,
-                                contentDescription = "Audio Output",
-                                tint = dynamicColors.primaryAccent,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Dynamic Audio",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "NOW PLAYING",
+                            color = dynamicColors.primaryAccent,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp
+                        )
+                        Text(
+                            text = track?.album ?: "Aura Soundscape",
+                            color = Color.White.copy(alpha = 0.8f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1
+                        )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Expressive Bouncy Album Art Card
-                val albumScale by animateFloatAsState(
-                    targetValue = if (uiState.isPlaying) 1.0f else 0.91f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
-                    ),
-                    label = "bouncyAlbumScale"
-                )
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(0.88f)
-                        .aspectRatio(1f)
-                        .scale(albumScale)
-                        .clip(RoundedCornerShape(40.dp))
-                        .clickable { onAlbumArtTap() },
-                    shape = RoundedCornerShape(40.dp),
-                    colors = CardDefaults.cardColors(containerColor = dynamicColors.surfaceContainer),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 24.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        dynamicColors.secondaryBg,
-                                        dynamicColors.surfaceContainer
-                                    )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        SubcomposeAsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(track?.artworkUri)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = "Album Artwork Canvas",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize(),
-                            error = {
-                                Icon(
-                                    imageVector = Icons.Default.MusicNote,
-                                    contentDescription = "Album Artwork Canvas",
-                                    tint = dynamicColors.primaryAccent,
-                                    modifier = Modifier.size(108.dp)
-                                )
-                            }
+                    IconButton(onClick = { }) {
+                        Icon(
+                            imageVector = Icons.Default.GraphicEq,
+                            contentDescription = "Audio Engine FX",
+                            tint = dynamicColors.primaryAccent
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Metadata & Animated Waveform
+                // Hero Album Art
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        shape = RoundedCornerShape(28.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
+                        colors = CardDefaults.cardColors(containerColor = dynamicColors.surfaceContainer),
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(28.dp))
+                            .clickable { onAlbumArtTap() }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(
+                                            dynamicColors.secondaryBg,
+                                            dynamicColors.surfaceContainer
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            SubcomposeAsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(track?.artworkUri)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Album Artwork Canvas",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize(),
+                                error = {
+                                    Icon(
+                                        imageVector = Icons.Default.MusicNote,
+                                        contentDescription = "Album Artwork Canvas",
+                                        tint = dynamicColors.primaryAccent,
+                                        modifier = Modifier.size(108.dp)
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Metadata Header
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
@@ -294,11 +253,6 @@ fun PlayerScreen(
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
-
-                    if (uiState.isPlaying) {
-                        AnimatedEqualizerBars(dynamicColors.primaryAccent)
-                        Spacer(modifier = Modifier.height(10.dp))
-                    }
 
                     // Dynamic Badges
                     Row(
@@ -337,24 +291,23 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Progress Slider & Timestamps
+                // Vibrating String Waveform Seekbar & Timestamps
                 Column(modifier = Modifier.fillMaxWidth()) {
                     val currentPosMs = uiState.currentPositionMs
                     val totalDurationMs = if (uiState.durationMs > 0) uiState.durationMs else 180000L
-                    val sliderValue = (currentPosMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
+                    val progressFraction = (currentPosMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
 
-                    Slider(
-                        value = sliderValue,
-                        onValueChange = { fraction ->
+                    VibratingWaveformSeekBar(
+                        progress = progressFraction,
+                        isPlaying = uiState.isPlaying,
+                        activeColor = dynamicColors.primaryAccent,
+                        inactiveColor = dynamicColors.surfaceContainer,
+                        onSeek = { fraction ->
                             onSeek((fraction * totalDurationMs).toLong())
-                        },
-                        colors = SliderDefaults.colors(
-                            thumbColor = dynamicColors.primaryAccent,
-                            activeTrackColor = dynamicColors.primaryAccent,
-                            inactiveTrackColor = dynamicColors.surfaceContainer
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        }
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
 
                     Row(
                         modifier = Modifier
@@ -379,7 +332,7 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Pixel Expressive Floating Control Bar Capsule
+                // Floating Control Bar Capsule
                 Surface(
                     color = dynamicColors.surfaceContainer.copy(alpha = 0.95f),
                     shape = CircleShape,
@@ -410,7 +363,6 @@ fun PlayerScreen(
                             )
                         }
 
-                        // Pixel Expressive Bouncy Play/Pause FAB
                         val playInteractionSource = remember { MutableInteractionSource() }
                         val isPlayPressed by playInteractionSource.collectIsPressedAsState()
                         val fabScale by animateFloatAsState(
@@ -468,6 +420,103 @@ fun PlayerScreen(
     }
 }
 
+@Composable
+fun VibratingWaveformSeekBar(
+    progress: Float,
+    isPlaying: Boolean,
+    activeColor: Color,
+    inactiveColor: Color,
+    onSeek: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val transition = rememberInfiniteTransition(label = "waveformVibration")
+    val phase by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2 * Math.PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "phase"
+    )
+
+    val baseAmplitudes = remember {
+        floatArrayOf(
+            0.3f, 0.5f, 0.2f, 0.8f, 0.4f, 0.9f, 0.6f, 0.3f,
+            0.7f, 1.0f, 0.5f, 0.8f, 0.4f, 0.6f, 0.9f, 0.3f,
+            0.5f, 0.8f, 0.2f, 0.7f, 0.4f, 0.9f, 0.6f, 0.3f,
+            0.8f, 1.0f, 0.5f, 0.7f, 0.3f, 0.6f, 0.9f, 0.4f,
+            0.6f, 0.9f, 0.3f, 0.8f, 0.5f, 0.7f, 0.4f, 0.2f,
+            0.7f, 0.9f, 0.4f, 0.6f, 0.3f, 0.5f, 0.8f, 0.4f
+        )
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    val fraction = (offset.x / size.width.toFloat()).coerceIn(0f, 1f)
+                    onSeek(fraction)
+                }
+            }
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures { change, _ ->
+                    val fraction = (change.position.x / size.width.toFloat()).coerceIn(0f, 1f)
+                    onSeek(fraction)
+                }
+            }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val barCount = baseAmplitudes.size
+            val availableWidth = size.width
+            val availableHeight = size.height
+            val barWidth = 4.dp.toPx()
+            val gapWidth = (availableWidth - (barCount * barWidth)) / (barCount - 1).coerceAtLeast(1)
+            val activeX = progress * availableWidth
+
+            for (i in 0 until barCount) {
+                val x = i * (barWidth + gapWidth) + (barWidth / 2f)
+                val baseAmp = baseAmplitudes[i]
+
+                val vibrationFactor = if (isPlaying) {
+                    0.20f * kotlin.math.sin(phase + i * 0.4f).toFloat()
+                } else 0f
+
+                val amp = (baseAmp + vibrationFactor).coerceIn(0.15f, 1.0f)
+                val barHeight = (amp * availableHeight * 0.75f).coerceAtLeast(6.dp.toPx())
+
+                val top = (availableHeight - barHeight) / 2f
+                val bottom = top + barHeight
+
+                val isPast = x <= activeX
+                val color = if (isPast) activeColor else inactiveColor
+
+                drawLine(
+                    color = color,
+                    start = Offset(x, top),
+                    end = Offset(x, bottom),
+                    strokeWidth = barWidth,
+                    cap = StrokeCap.Round
+                )
+            }
+
+            // Interactive thumb glow indicator
+            drawCircle(
+                color = activeColor,
+                radius = 7.dp.toPx(),
+                center = Offset(activeX, availableHeight / 2f)
+            )
+            drawCircle(
+                color = Color.White,
+                radius = 3.5.dp.toPx(),
+                center = Offset(activeX, availableHeight / 2f)
+            )
+        }
+    }
+}
+
 private fun formatTimeMs(timeMs: Long): String {
     val totalSeconds = (timeMs / 1000).toInt()
     val minutes = totalSeconds / 60
@@ -506,37 +555,3 @@ fun BouncyIconButton(
         content()
     }
 }
-
-@Composable
-fun AnimatedEqualizerBars(tint: Color) {
-    val transition = rememberInfiniteTransition(label = "eqBars")
-
-    val h1 by transition.animateFloat(
-        initialValue = 4f, targetValue = 18f,
-        animationSpec = infiniteRepeatable(tween(450, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h1"
-    )
-    val h2 by transition.animateFloat(
-        initialValue = 18f, targetValue = 6f,
-        animationSpec = infiniteRepeatable(tween(350, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h2"
-    )
-    val h3 by transition.animateFloat(
-        initialValue = 6f, targetValue = 22f,
-        animationSpec = infiniteRepeatable(tween(550, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h3"
-    )
-    val h4 by transition.animateFloat(
-        initialValue = 20f, targetValue = 4f,
-        animationSpec = infiniteRepeatable(tween(400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h4"
-    )
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.Bottom,
-        modifier = Modifier.height(24.dp)
-    ) {
-        Box(modifier = Modifier.width(4.dp).height(h1.dp).background(tint, CircleShape))
-        Box(modifier = Modifier.width(4.dp).height(h2.dp).background(tint, CircleShape))
-        Box(modifier = Modifier.width(4.dp).height(h3.dp).background(tint, CircleShape))
-        Box(modifier = Modifier.width(4.dp).height(h4.dp).background(tint, CircleShape))
-    }
-}
-

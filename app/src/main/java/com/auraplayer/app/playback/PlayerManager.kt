@@ -250,7 +250,7 @@ class PlayerManager(
                         )
                     }
                 }
-                delay(200)
+                delay(16)
             }
         }
     }
