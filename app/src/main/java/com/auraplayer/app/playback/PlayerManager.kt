@@ -12,6 +12,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import com.auraplayer.app.MainActivity
+import com.auraplayer.app.data.AuraDatabase
 import com.auraplayer.app.data.TrackEntity
 import com.auraplayer.app.metadata.MetadataExtractor
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class PlayerManager(
     private val context: Context,
+    private val db: AuraDatabase = AuraDatabase.getInstance(context),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) {
     companion object {
@@ -66,6 +68,12 @@ class PlayerManager(
     private val activeTrackMap = ConcurrentHashMap<String, TrackEntity>()
     private var positionUpdateJob: Job? = null
 
+    // Autoplay: rolling window of the last 20 track IDs to avoid re-queueing
+    private val recentAutoplayIds = ArrayDeque<Long>(20)
+
+    // 50%-played tracking for lastPlayedTimestamp update
+    private var halfPlayedMarkedForId: String? = null
+
     init {
         activeSession = mediaSession
 
@@ -88,6 +96,11 @@ class PlayerManager(
                         durationMs = duration
                     )
                 }
+
+                // Queue exhausted → trigger autoplay
+                if (playbackState == Player.STATE_ENDED && !player.hasNextMediaItem()) {
+                    triggerAutoplay()
+                }
             }
 
             override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
@@ -95,6 +108,9 @@ class PlayerManager(
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                // Reset 50%-played marker on every track change
+                halfPlayedMarkedForId = null
+
                 val mediaId = mediaItem?.mediaId
                 val trackEntity = mediaId?.let { activeTrackMap[it] }
 
@@ -181,6 +197,7 @@ class PlayerManager(
 
     fun playTrackList(tracks: List<TrackEntity>, startIndex: Int = 0) {
         if (tracks.isEmpty()) return
+        recentAutoplayIds.clear()
         activeTrackMap.clear()
         val mediaItems = tracks.map { track ->
             activeTrackMap[track.id.toString()] = track
@@ -246,6 +263,63 @@ class PlayerManager(
         _uiState.update { it.copy(volume = clampedVolume) }
     }
 
+    // ── Autoplay engine ────────────────────────────────────────────────────────
+
+    private fun triggerAutoplay() {
+        scope.launch(Dispatchers.IO) {
+            val currentMediaId = player.currentMediaItem?.mediaId ?: return@launch
+            val seedTrack = activeTrackMap[currentMediaId] ?: db.trackDao().getTrackById(currentMediaId.toLongOrNull() ?: return@launch) ?: return@launch
+
+            // Full library as candidates
+            val allTracks = db.trackDao().getAllTracksSuspend()
+            if (allTracks.size < 2) return@launch
+
+            // Build scrobble frequency map: artistName -> total play count across scrobble history
+            val scrobbleDao = db.scrobbleQueueDao()
+            val artistNames = allTracks.map { it.artistName }.distinct()
+            val scrobblePlayCounts = buildMap<String, Int> {
+                for (artist in artistNames) {
+                    val count = scrobbleDao.getScrobbleCountForArtist(artist)
+                    if (count > 0) put(artist, count)
+                }
+            }
+
+            val recentIds = recentAutoplayIds.toSet()
+            val nextTrack = AutoplayScorer.selectNextTrack(
+                seedTrack = seedTrack,
+                candidates = allTracks,
+                recentQueueIds = recentIds,
+                scrobblePlayCounts = scrobblePlayCounts
+            ) ?: return@launch
+
+            // Register the autoplay track in our maps so metadata resolves correctly
+            activeTrackMap[nextTrack.id.toString()] = nextTrack
+            recentAutoplayIds.addLast(nextTrack.id)
+            if (recentAutoplayIds.size > 20) recentAutoplayIds.removeFirst()
+
+            val mediaItem = MediaItem.Builder()
+                .setMediaId(nextTrack.id.toString())
+                .setUri(nextTrack.uriString)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(nextTrack.title)
+                        .setArtist(nextTrack.artistName)
+                        .setAlbumTitle(nextTrack.albumName)
+                        .setArtworkUri(nextTrack.albumArtUri?.let { android.net.Uri.parse(it) })
+                        .build()
+                )
+                .build()
+
+            scope.launch(Dispatchers.Main) {
+                player.addMediaItem(mediaItem)
+                player.seekToNextMediaItem()
+                player.play()
+            }
+        }
+    }
+
+    // ── Position tracking + 50%-played stamp ──────────────────────────────────
+
     private fun startPositionUpdates() {
         stopPositionUpdates()
         positionUpdateJob = scope.launch {
@@ -258,6 +332,18 @@ class PlayerManager(
                             currentPositionMs = currentPos,
                             durationMs = duration
                         )
+                    }
+
+                    // Mark lastPlayedTimestamp when user has heard ≥50% of the track
+                    val mediaId = player.currentMediaItem?.mediaId
+                    if (mediaId != null && mediaId != halfPlayedMarkedForId && duration > 0L && currentPos >= duration / 2) {
+                        halfPlayedMarkedForId = mediaId
+                        val trackId = mediaId.toLongOrNull()
+                        if (trackId != null) {
+                            scope.launch(Dispatchers.IO) {
+                                db.trackDao().updateLastPlayed(trackId, System.currentTimeMillis())
+                            }
+                        }
                     }
                 }
                 delay(16)

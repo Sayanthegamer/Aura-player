@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
         musicRepository = MusicRepository(db, mediaScanner)
         settingsPreferences = SettingsPreferences(this)
         lrclibRepository = LrclibRepository(db.lyricDao())
-        playerManager = PlayerManager(this)
+        playerManager = PlayerManager(this, db)
         val audioDspManager = com.auraplayer.app.audio.AudioDspManager(this)
 
         setContent {

@@ -14,6 +14,9 @@ interface TrackDao {
     @Query("SELECT * FROM tracks ORDER BY title ASC")
     fun getAllTracksFlow(): Flow<List<TrackEntity>>
 
+    @Query("SELECT * FROM tracks ORDER BY title ASC")
+    suspend fun getAllTracksSuspend(): List<TrackEntity>
+
     @Query("SELECT * FROM tracks WHERE id = :id")
     suspend fun getTrackById(id: Long): TrackEntity?
 
@@ -25,6 +28,9 @@ interface TrackDao {
 
     @Query("SELECT * FROM tracks WHERE title LIKE '%' || :query || '%' OR artistName LIKE '%' || :query || '%' OR albumName LIKE '%' || :query || '%' ORDER BY title ASC")
     fun searchTracks(query: String): Flow<List<TrackEntity>>
+
+    @Query("UPDATE tracks SET lastPlayedTimestamp = :timestampMs WHERE id = :id")
+    suspend fun updateLastPlayed(id: Long, timestampMs: Long)
 
     @Query("DELETE FROM tracks")
     suspend fun deleteAllTracks()
