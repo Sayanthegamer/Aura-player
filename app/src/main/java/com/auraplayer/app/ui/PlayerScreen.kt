@@ -141,12 +141,16 @@ fun PlayerScreen(
         label = "brownian2"
     )
 
-    val primaryAccent = animatedAccent
-    val secondaryAccent = animatedSecondary
-    val surfaceContainer = Color.White.copy(alpha = 0.15f)
-    val dominantBg = animatedDominant
+    // Vibrant Palette Color extraction with M3 Expressive fallback tokens
+    val themeColorScheme = MaterialTheme.colorScheme
+
+    val primaryAccent = if (accentColor != Color(0xFFD0BCFF)) accentColor else themeColorScheme.primary
+    val secondaryAccent = if (secondaryColor != Color(0xFF381E72)) secondaryColor else themeColorScheme.secondary
+    val dominantBg = if (dominantColor != Color(0xFF1E1B2E)) dominantColor else themeColorScheme.background
+
+    val surfaceContainer = primaryAccent.copy(alpha = 0.22f)
     val onSurface = Color.White
-    val onSurfaceVariant = Color.White.copy(alpha = 0.85f)
+    val onSurfaceVariant = Color.White.copy(alpha = 0.82f)
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -233,7 +237,7 @@ fun PlayerScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "NOW PLAYING",
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = primaryAccent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
@@ -251,7 +255,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Default.GraphicEq,
                             contentDescription = "Audio Engine FX & EQ",
-                            tint = Color.White
+                            tint = primaryAccent
                         )
                     }
                 }
@@ -291,7 +295,7 @@ fun PlayerScreen(
                                     Icon(
                                         imageVector = Icons.Default.MusicNote,
                                         contentDescription = "Album Artwork Canvas",
-                                        tint = Color.White,
+                                        tint = primaryAccent,
                                         modifier = Modifier.size(108.dp)
                                     )
                                 }
@@ -331,14 +335,15 @@ fun PlayerScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // High Contrast Frosted Glass Badges
+                    // High Contrast M3 Expressive Glass Badges
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            color = Color.White.copy(alpha = 0.20f),
-                            shape = CircleShape
+                            color = primaryAccent.copy(alpha = 0.25f),
+                            shape = CircleShape,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, primaryAccent.copy(alpha = 0.4f))
                         ) {
                             Text(
                                 text = "${track?.codec ?: "FLAC"} • ${track?.bitDepth ?: 24}-bit/${(track?.sampleRate ?: 96000) / 1000}kHz",
@@ -352,8 +357,9 @@ fun PlayerScreen(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Surface(
-                            color = Color.White.copy(alpha = 0.20f),
-                            shape = CircleShape
+                            color = primaryAccent.copy(alpha = 0.25f),
+                            shape = CircleShape,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, primaryAccent.copy(alpha = 0.4f))
                         ) {
                             Text(
                                 text = "RG ${if ((track?.replayGainDb ?: 0f) >= 0) "+" else ""}${String.format("%.1f", track?.replayGainDb ?: 0.0f)}dB",
@@ -377,8 +383,8 @@ fun PlayerScreen(
                     MaterialSquigglySeekBar(
                         progress = progressFraction,
                         isPlaying = uiState.isPlaying,
-                        activeColor = Color.White,
-                        inactiveColor = Color.White.copy(alpha = 0.35f),
+                        activeColor = primaryAccent,
+                        inactiveColor = Color.White.copy(alpha = 0.30f),
                         onSeek = { fraction ->
                             onSeek((fraction * totalDurationMs).toLong())
                         }
@@ -409,11 +415,11 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Modern Frosted Glass Control Bar Capsule
+                // Modern M3 Expressive Glass Capsule
                 Surface(
                     color = Color.Black.copy(alpha = 0.35f),
                     shape = CircleShape,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, primaryAccent.copy(alpha = 0.35f)),
                     shadowElevation = 24.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -456,7 +462,7 @@ fun PlayerScreen(
                             onClick = onPlayPauseToggle,
                             interactionSource = playInteractionSource,
                             shape = CircleShape,
-                            color = Color.White,
+                            color = primaryAccent,
                             shadowElevation = 12.dp,
                             modifier = Modifier.scale(fabScale)
                         ) {
