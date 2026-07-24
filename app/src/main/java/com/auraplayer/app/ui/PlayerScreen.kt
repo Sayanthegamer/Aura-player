@@ -1,7 +1,5 @@
 package com.auraplayer.app.ui
 
-import android.graphics.Bitmap
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -39,7 +37,6 @@ import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -60,7 +57,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -72,14 +72,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.auraplayer.app.playback.PlayerUiState
-
-data class DynamicThemeColors(
-    val dominantBg: Color,
-    val primaryAccent: Color,
-    val secondaryAccent: Color,
-    val surfaceContainer: Color,
-    val secondaryBg: Color
-)
 
 @Composable
 fun PlayerScreen(
@@ -93,20 +85,18 @@ fun PlayerScreen(
     modifier: Modifier = Modifier
 ) {
     val track = uiState.currentTrack
+    val colorScheme = MaterialTheme.colorScheme
 
-    val dynamicColors = remember(track?.id) {
-        DynamicThemeColors(
-            dominantBg = Color(0xFF0F0D15),
-            primaryAccent = Color(0xFFFF4081),
-            secondaryAccent = Color(0xFF00E5FF),
-            surfaceContainer = Color(0xFF1E1A29),
-            secondaryBg = Color(0xFF14101F)
-        )
-    }
+    val primaryAccent = colorScheme.primary
+    val secondaryAccent = colorScheme.secondary
+    val surfaceContainer = colorScheme.surfaceContainerHigh
+    val dominantBg = colorScheme.background
+    val onSurface = colorScheme.onBackground
+    val onSurfaceVariant = colorScheme.onSurfaceVariant
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = dynamicColors.dominantBg
+        color = dominantBg
     ) {
         Box(
             modifier = Modifier
@@ -114,9 +104,9 @@ fun PlayerScreen(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            dynamicColors.secondaryBg.copy(alpha = 0.8f),
-                            dynamicColors.dominantBg,
-                            dynamicColors.dominantBg
+                            colorScheme.surfaceContainer.copy(alpha = 0.8f),
+                            dominantBg,
+                            dominantBg
                         )
                     )
                 )
@@ -139,7 +129,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowDown,
                             contentDescription = "Collapse Player",
-                            tint = Color.White,
+                            tint = onSurface,
                             modifier = Modifier.size(32.dp)
                         )
                     }
@@ -147,14 +137,14 @@ fun PlayerScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "NOW PLAYING",
-                            color = dynamicColors.primaryAccent,
+                            color = primaryAccent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         )
                         Text(
                             text = track?.album ?: "Aura Soundscape",
-                            color = Color.White.copy(alpha = 0.8f),
+                            color = onSurface,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1
@@ -165,7 +155,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Default.GraphicEq,
                             contentDescription = "Audio Engine FX",
-                            tint = dynamicColors.primaryAccent
+                            tint = primaryAccent
                         )
                     }
                 }
@@ -182,7 +172,7 @@ fun PlayerScreen(
                     Card(
                         shape = RoundedCornerShape(28.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
-                        colors = CardDefaults.cardColors(containerColor = dynamicColors.surfaceContainer),
+                        colors = CardDefaults.cardColors(containerColor = surfaceContainer),
                         modifier = Modifier
                             .fillMaxWidth(0.85f)
                             .aspectRatio(1f)
@@ -195,8 +185,8 @@ fun PlayerScreen(
                                 .background(
                                     Brush.radialGradient(
                                         colors = listOf(
-                                            dynamicColors.secondaryBg,
-                                            dynamicColors.surfaceContainer
+                                            colorScheme.surfaceContainerLowest,
+                                            surfaceContainer
                                         )
                                     )
                                 ),
@@ -214,7 +204,7 @@ fun PlayerScreen(
                                     Icon(
                                         imageVector = Icons.Default.MusicNote,
                                         contentDescription = "Album Artwork Canvas",
-                                        tint = dynamicColors.primaryAccent,
+                                        tint = primaryAccent,
                                         modifier = Modifier.size(108.dp)
                                     )
                                 }
@@ -232,7 +222,7 @@ fun PlayerScreen(
                 ) {
                     Text(
                         text = track?.title ?: "Aura Soundscape",
-                        color = Color.White,
+                        color = onSurface,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
@@ -244,7 +234,7 @@ fun PlayerScreen(
 
                     Text(
                         text = track?.artist ?: "Aura Audio Engine",
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = onSurfaceVariant,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center,
@@ -260,12 +250,12 @@ fun PlayerScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            color = dynamicColors.surfaceContainer,
+                            color = surfaceContainer,
                             shape = CircleShape
                         ) {
                             Text(
                                 text = "${track?.codec ?: "FLAC"} • ${track?.bitDepth ?: 24}-bit/${(track?.sampleRate ?: 96000) / 1000}kHz",
-                                color = dynamicColors.primaryAccent,
+                                color = primaryAccent,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -275,12 +265,12 @@ fun PlayerScreen(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Surface(
-                            color = dynamicColors.surfaceContainer.copy(alpha = 0.8f),
+                            color = surfaceContainer.copy(alpha = 0.8f),
                             shape = CircleShape
                         ) {
                             Text(
-                                text = "RG -2.1dB",
-                                color = dynamicColors.secondaryAccent,
+                                text = "RG ${if ((track?.replayGainDb ?: 0f) >= 0) "+" else ""}${String.format("%.1f", track?.replayGainDb ?: 0.0f)}dB",
+                                color = secondaryAccent,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -291,17 +281,17 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Vibrating String Waveform Seekbar & Timestamps
+                // Android 13/14 Squiggly Vibrating Wave Seekbar & Timestamps
                 Column(modifier = Modifier.fillMaxWidth()) {
                     val currentPosMs = uiState.currentPositionMs
                     val totalDurationMs = if (uiState.durationMs > 0) uiState.durationMs else 180000L
                     val progressFraction = (currentPosMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
 
-                    VibratingWaveformSeekBar(
+                    MaterialSquigglySeekBar(
                         progress = progressFraction,
                         isPlaying = uiState.isPlaying,
-                        activeColor = dynamicColors.primaryAccent,
-                        inactiveColor = dynamicColors.surfaceContainer,
+                        activeColor = primaryAccent,
+                        inactiveColor = onSurfaceVariant.copy(alpha = 0.35f),
                         onSeek = { fraction ->
                             onSeek((fraction * totalDurationMs).toLong())
                         }
@@ -317,15 +307,15 @@ fun PlayerScreen(
                     ) {
                         Text(
                             text = formatTimeMs(currentPosMs),
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
+                            color = onSurfaceVariant,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = formatTimeMs(totalDurationMs),
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
+                            text = "${formatTimeMs(currentPosMs)} / ${formatTimeMs(totalDurationMs)}",
+                            color = onSurfaceVariant,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -334,7 +324,7 @@ fun PlayerScreen(
 
                 // Floating Control Bar Capsule
                 Surface(
-                    color = dynamicColors.surfaceContainer.copy(alpha = 0.95f),
+                    color = surfaceContainer.copy(alpha = 0.95f),
                     shape = CircleShape,
                     shadowElevation = 16.dp,
                     modifier = Modifier.fillMaxWidth()
@@ -350,7 +340,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.Shuffle,
                                 contentDescription = "Shuffle",
-                                tint = Color.White.copy(alpha = 0.7f)
+                                tint = onSurface.copy(alpha = 0.7f)
                             )
                         }
 
@@ -358,7 +348,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.SkipPrevious,
                                 contentDescription = "Previous Track",
-                                tint = Color.White,
+                                tint = onSurface,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -378,7 +368,7 @@ fun PlayerScreen(
                             onClick = onPlayPauseToggle,
                             interactionSource = playInteractionSource,
                             shape = RoundedCornerShape(26.dp),
-                            color = dynamicColors.primaryAccent,
+                            color = primaryAccent,
                             shadowElevation = 8.dp,
                             modifier = Modifier.scale(fabScale)
                         ) {
@@ -391,7 +381,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                     contentDescription = if (uiState.isPlaying) "Pause" else "Play",
-                                    tint = dynamicColors.dominantBg,
+                                    tint = colorScheme.onPrimary,
                                     modifier = Modifier.size(38.dp)
                                 )
                             }
@@ -401,7 +391,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.SkipNext,
                                 contentDescription = "Next Track",
-                                tint = Color.White,
+                                tint = onSurface,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -410,7 +400,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.Lyrics,
                                 contentDescription = "Synced Lyrics",
-                                tint = dynamicColors.primaryAccent
+                                tint = primaryAccent
                             )
                         }
                     }
@@ -421,7 +411,7 @@ fun PlayerScreen(
 }
 
 @Composable
-fun VibratingWaveformSeekBar(
+fun MaterialSquigglySeekBar(
     progress: Float,
     isPlaying: Boolean,
     activeColor: Color,
@@ -429,7 +419,7 @@ fun VibratingWaveformSeekBar(
     onSeek: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val transition = rememberInfiniteTransition(label = "waveformVibration")
+    val transition = rememberInfiniteTransition(label = "squigglyVibration")
     val phase by transition.animateFloat(
         initialValue = 0f,
         targetValue = (2 * Math.PI).toFloat(),
@@ -440,21 +430,10 @@ fun VibratingWaveformSeekBar(
         label = "phase"
     )
 
-    val baseAmplitudes = remember {
-        floatArrayOf(
-            0.3f, 0.5f, 0.2f, 0.8f, 0.4f, 0.9f, 0.6f, 0.3f,
-            0.7f, 1.0f, 0.5f, 0.8f, 0.4f, 0.6f, 0.9f, 0.3f,
-            0.5f, 0.8f, 0.2f, 0.7f, 0.4f, 0.9f, 0.6f, 0.3f,
-            0.8f, 1.0f, 0.5f, 0.7f, 0.3f, 0.6f, 0.9f, 0.4f,
-            0.6f, 0.9f, 0.3f, 0.8f, 0.5f, 0.7f, 0.4f, 0.2f,
-            0.7f, 0.9f, 0.4f, 0.6f, 0.3f, 0.5f, 0.8f, 0.4f
-        )
-    }
-
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(54.dp)
+            .height(44.dp)
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     val fraction = (offset.x / size.width.toFloat()).coerceIn(0f, 1f)
@@ -469,50 +448,61 @@ fun VibratingWaveformSeekBar(
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val barCount = baseAmplitudes.size
-            val availableWidth = size.width
-            val availableHeight = size.height
-            val barWidth = 4.dp.toPx()
-            val gapWidth = (availableWidth - (barCount * barWidth)) / (barCount - 1).coerceAtLeast(1)
-            val activeX = progress * availableWidth
+            val width = size.width
+            val height = size.height
+            val centerY = height / 2f
+            val activeX = (progress * width).coerceIn(0f, width)
 
-            for (i in 0 until barCount) {
-                val x = i * (barWidth + gapWidth) + (barWidth / 2f)
-                val baseAmp = baseAmplitudes[i]
+            val strokeWidthPx = 4.dp.toPx()
+            val amplitudePx = 5.dp.toPx()
+            val wavelengthPx = 28.dp.toPx()
+            val thumbRadiusPx = 7.5.dp.toPx()
 
-                val vibrationFactor = if (isPlaying) {
-                    0.20f * kotlin.math.sin(phase + i * 0.4f).toFloat()
-                } else 0f
+            // 1. Draw Played Squiggly Wave (0 to activeX)
+            if (activeX > 0f) {
+                val wavePath = Path()
+                wavePath.moveTo(0f, centerY)
 
-                val amp = (baseAmp + vibrationFactor).coerceIn(0.15f, 1.0f)
-                val barHeight = (amp * availableHeight * 0.75f).coerceAtLeast(6.dp.toPx())
+                val activeEndX = (activeX - thumbRadiusPx).coerceAtLeast(0f)
+                var x = 0f
+                val step = 2.dp.toPx()
 
-                val top = (availableHeight - barHeight) / 2f
-                val bottom = top + barHeight
+                while (x <= activeEndX) {
+                    val currentPhase = if (isPlaying) phase else 0f
+                    val y = centerY + amplitudePx * kotlin.math.sin((x / wavelengthPx) * (2 * Math.PI) + currentPhase).toFloat()
+                    wavePath.lineTo(x, y)
+                    x += step
+                }
 
-                val isPast = x <= activeX
-                val color = if (isPast) activeColor else inactiveColor
-
-                drawLine(
-                    color = color,
-                    start = Offset(x, top),
-                    end = Offset(x, bottom),
-                    strokeWidth = barWidth,
-                    cap = StrokeCap.Round
+                drawPath(
+                    path = wavePath,
+                    color = activeColor,
+                    style = Stroke(
+                        width = strokeWidthPx,
+                        cap = StrokeCap.Round,
+                        join = StrokeJoin.Round
+                    )
                 )
             }
 
-            // Interactive thumb glow indicator
+            // 2. Draw Active Thumb Dot
             drawCircle(
                 color = activeColor,
-                radius = 7.dp.toPx(),
-                center = Offset(activeX, availableHeight / 2f)
+                radius = thumbRadiusPx,
+                center = Offset(activeX, centerY)
             )
-            drawCircle(
-                color = Color.White,
-                radius = 3.5.dp.toPx(),
-                center = Offset(activeX, availableHeight / 2f)
-            )
+
+            // 3. Draw Unplayed Straight Line (activeX to width)
+            val unplayedStartX = (activeX + thumbRadiusPx).coerceAtMost(width)
+            if (unplayedStartX < width) {
+                drawLine(
+                    color = inactiveColor,
+                    start = Offset(unplayedStartX, centerY),
+                    end = Offset(width, centerY),
+                    strokeWidth = strokeWidthPx,
+                    cap = StrokeCap.Round
+                )
+            }
         }
     }
 }
@@ -521,7 +511,7 @@ private fun formatTimeMs(timeMs: Long): String {
     val totalSeconds = (timeMs / 1000).toInt()
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    return String.format("%02d:%02d", minutes, seconds)
+    return String.format("%d:%02d", minutes, seconds)
 }
 
 @Composable
