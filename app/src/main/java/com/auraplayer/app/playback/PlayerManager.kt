@@ -1,6 +1,7 @@
 package com.auraplayer.app.playback
 
 import android.content.Context
+import com.auraplayer.app.metadata.MetadataExtractor
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -65,6 +66,10 @@ class PlayerManager(
                 val artist = mediaItem?.mediaMetadata?.artist?.toString() ?: "Aura Artist"
                 val album = mediaItem?.mediaMetadata?.albumTitle?.toString() ?: "Aura Album"
 
+                val gainDb = -2.1f
+                val peak = 0.95f
+                applyReplayGain(gainDb, peak)
+
                 _uiState.update {
                     it.copy(
                         currentTrack = TrackMetadata(
@@ -76,12 +81,20 @@ class PlayerManager(
                             codec = "FLAC",
                             sampleRate = 96000,
                             bitDepth = 24,
-                            bitrateKbps = 1411
+                            bitrateKbps = 1411,
+                            replayGainDb = gainDb,
+                            replayGainPeak = peak
                         )
                     )
                 }
             }
         })
+    }
+
+    fun applyReplayGain(gainDb: Float?, peak: Float?) {
+        val scale = MetadataExtractor.calculateReplayGainScale(gainDb, peak)
+        player.volume = scale
+        _uiState.update { it.copy(volume = scale) }
     }
 
     fun playTrack(mediaUri: String, title: String = "Aura Soundscape", artist: String = "Aura Audio Engine") {

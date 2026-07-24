@@ -1,0 +1,226 @@
+package com.auraplayer.app.ui
+
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.auraplayer.app.lyrics.ParsedLyrics
+
+@Composable
+fun LyricCanvas(
+    lyrics: ParsedLyrics,
+    currentPositionProvider: () -> Long,
+    manualOffsetMs: Long,
+    onOffsetChange: (Long) -> Unit,
+    onClose: () -> Unit
+) {
+    val listState = rememberLazyListState()
+    var showOffsetSlider by remember { mutableStateOf(false) }
+
+    val currentPositionMs = currentPositionProvider() + manualOffsetMs
+
+    val activeIndex by remember(currentPositionMs, lyrics.lines) {
+        derivedStateOf {
+            val idx = lyrics.lines.indexOfLast { it.startMs <= currentPositionMs }
+            if (idx >= 0) idx else 0
+        }
+    }
+
+    LaunchedEffect(activeIndex) {
+        if (lyrics.lines.isNotEmpty()) {
+            listState.animateScrollToItem(
+                index = activeIndex.coerceAtLeast(0),
+                scrollOffset = -250
+            )
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DarkBg)
+            .padding(horizontal = 24.dp, vertical = 32.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "SYNCED LYRICS",
+                        color = AccentOrange,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    )
+                    Text(
+                        text = "Live Canvas",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+
+                Row {
+                    IconButton(onClick = { showOffsetSlider = !showOffsetSlider }) {
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = "Adjust Lyric Offset",
+                            tint = if (showOffsetSlider) AccentOrange else Color.White
+                        )
+                    }
+                    IconButton(onClick = onClose) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close Lyrics",
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
+
+            // Offset Adjustment Slider Card
+            if (showOffsetSlider) {
+                Surface(
+                    color = CardBg,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Manual Offset Sync",
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "${if (manualOffsetMs >= 0) "+" else ""}${manualOffsetMs} ms",
+                                color = AccentOrange,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Slider(
+                            value = manualOffsetMs.toFloat(),
+                            onValueChange = { onOffsetChange(it.toLong()) },
+                            valueRange = -5000f..5000f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = AccentOrange,
+                                activeTrackColor = AccentOrange,
+                                inactiveTrackColor = ChipBg
+                            )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Lyric Scroll List
+            if (lyrics.lines.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No synced lyrics available",
+                        color = TextMuted,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    itemsIndexed(lyrics.lines) { index, line ->
+                        val isActive = index == activeIndex
+                        val alpha by animateFloatAsState(
+                            targetValue = if (isActive) 1.0f else 0.35f,
+                            animationSpec = tween(durationMillis = 300),
+                            label = "lyricAlpha"
+                        )
+                        val scale by animateFloatAsState(
+                            targetValue = if (isActive) 1.06f else 0.98f,
+                            animationSpec = tween(durationMillis = 300),
+                            label = "lyricScale"
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .graphicsLayer {
+                                    this.alpha = alpha
+                                    this.scaleX = scale
+                                    this.scaleY = scale
+                                }
+                        ) {
+                            Text(
+                                text = line.content,
+                                color = if (isActive) Color.White else TextMuted,
+                                fontSize = if (isActive) 24.sp else 18.sp,
+                                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                                textAlign = TextAlign.Start,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
