@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.palette.ktx)
+    implementation(libs.androidx.datastore.preferences)
 
     // Media3 ExoPlayer & Session
     implementation(libs.androidx.media3.exoplayer)

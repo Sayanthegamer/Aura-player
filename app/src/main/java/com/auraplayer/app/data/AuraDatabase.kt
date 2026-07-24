@@ -5,10 +5,22 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [LyricEntity::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        LyricEntity::class,
+        TrackEntity::class,
+        AlbumEntity::class,
+        ArtistEntity::class
+    ],
+    version = 2,
+    exportSchema = false
+)
 abstract class AuraDatabase : RoomDatabase() {
 
     abstract fun lyricDao(): LyricDao
+    abstract fun trackDao(): TrackDao
+    abstract fun albumDao(): AlbumDao
+    abstract fun artistDao(): ArtistDao
 
     companion object {
         @Volatile
@@ -20,7 +32,9 @@ abstract class AuraDatabase : RoomDatabase() {
                     context.applicationContext,
                     AuraDatabase::class.java,
                     "aura_database.db"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
