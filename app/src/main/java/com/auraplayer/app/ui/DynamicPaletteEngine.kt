@@ -3,6 +3,8 @@ package com.auraplayer.app.ui
 import android.graphics.Bitmap
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,24 +20,37 @@ import kotlinx.coroutines.withContext
 data class AlbumArtworkColors(
     val dominantBg: Color = Color(0xFF141218),
     val secondaryBg: Color = Color(0xFF281C30),
-    val primaryAccent: Color = Color(0xFFFF8906),
-    val secondaryAccent: Color = Color(0xFFE53170),
-    val surfaceContainer: Color = Color(0xFF252030)
+    val primaryAccent: Color = Color(0xFFD0BCFF),
+    val secondaryAccent: Color = Color(0xFFCCC2DC),
+    val surfaceContainer: Color = Color(0xFF2B2930)
 )
 
 @Composable
-fun rememberArtworkColors(bitmap: Bitmap?): AlbumArtworkColors {
-    var targetColors by remember { mutableStateOf(AlbumArtworkColors()) }
+fun rememberArtworkColors(
+    bitmap: Bitmap?,
+    fallbackColorScheme: ColorScheme = MaterialTheme.colorScheme
+): AlbumArtworkColors {
+    var targetColors by remember(fallbackColorScheme) {
+        mutableStateOf(
+            AlbumArtworkColors(
+                dominantBg = fallbackColorScheme.background,
+                secondaryBg = fallbackColorScheme.surfaceContainerLow,
+                primaryAccent = fallbackColorScheme.primary,
+                secondaryAccent = fallbackColorScheme.secondary,
+                surfaceContainer = fallbackColorScheme.surfaceContainerHigh
+            )
+        )
+    }
 
-    LaunchedEffect(bitmap) {
+    LaunchedEffect(bitmap, fallbackColorScheme) {
         if (bitmap != null) {
             withContext(Dispatchers.Default) {
                 val palette = Palette.from(bitmap).generate()
 
-                val dominantArgb = palette.getDominantColor(0xFF141218.toInt())
-                val vibrantArgb = palette.getVibrantColor(palette.getLightVibrantColor(0xFFFF8906.toInt()))
-                val darkVibrantArgb = palette.getDarkVibrantColor(palette.getDarkMutedColor(0xFF281C30.toInt()))
-                val mutedArgb = palette.getMutedColor(0xFF252030.toInt())
+                val dominantArgb = palette.getDominantColor(fallbackColorScheme.background.toArgb())
+                val vibrantArgb = palette.getVibrantColor(palette.getLightVibrantColor(fallbackColorScheme.primary.toArgb()))
+                val darkVibrantArgb = palette.getDarkVibrantColor(palette.getDarkMutedColor(fallbackColorScheme.surfaceContainerLow.toArgb()))
+                val mutedArgb = palette.getMutedColor(fallbackColorScheme.secondary.toArgb())
 
                 targetColors = AlbumArtworkColors(
                     dominantBg = Color(dominantArgb).darken(0.65f),
@@ -45,32 +60,40 @@ fun rememberArtworkColors(bitmap: Bitmap?): AlbumArtworkColors {
                     surfaceContainer = Color(dominantArgb).darken(0.40f)
                 )
             }
+        } else {
+            targetColors = AlbumArtworkColors(
+                dominantBg = fallbackColorScheme.background,
+                secondaryBg = fallbackColorScheme.surfaceContainerLow,
+                primaryAccent = fallbackColorScheme.primary,
+                secondaryAccent = fallbackColorScheme.secondary,
+                surfaceContainer = fallbackColorScheme.surfaceContainerHigh
+            )
         }
     }
 
     val animatedDominantBg by animateColorAsState(
         targetValue = targetColors.dominantBg,
-        animationSpec = tween(1000),
+        animationSpec = tween(800),
         label = "dominantBg"
     )
     val animatedSecondaryBg by animateColorAsState(
         targetValue = targetColors.secondaryBg,
-        animationSpec = tween(1000),
+        animationSpec = tween(800),
         label = "secondaryBg"
     )
     val animatedPrimaryAccent by animateColorAsState(
         targetValue = targetColors.primaryAccent,
-        animationSpec = tween(1000),
+        animationSpec = tween(800),
         label = "primaryAccent"
     )
     val animatedSecondaryAccent by animateColorAsState(
         targetValue = targetColors.secondaryAccent,
-        animationSpec = tween(1000),
+        animationSpec = tween(800),
         label = "secondaryAccent"
     )
     val animatedSurfaceContainer by animateColorAsState(
         targetValue = targetColors.surfaceContainer,
-        animationSpec = tween(1000),
+        animationSpec = tween(800),
         label = "surfaceContainer"
     )
 
