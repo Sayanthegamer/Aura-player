@@ -143,10 +143,10 @@ fun PlayerScreen(
 
     val primaryAccent = animatedAccent
     val secondaryAccent = animatedSecondary
-    val surfaceContainer = animatedSecondary.copy(alpha = 0.45f)
+    val surfaceContainer = Color.White.copy(alpha = 0.15f)
     val dominantBg = animatedDominant
     val onSurface = Color.White
-    val onSurfaceVariant = Color.White.copy(alpha = 0.75f)
+    val onSurfaceVariant = Color.White.copy(alpha = 0.85f)
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -160,7 +160,7 @@ fun PlayerScreen(
                     .graphicsLayer {
                         renderEffect = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                             android.graphics.RenderEffect.createBlurEffect(
-                                130f, 130f,
+                                140f, 140f,
                                 android.graphics.Shader.TileMode.MIRROR
                             ).asComposeRenderEffect()
                         } else null
@@ -174,12 +174,12 @@ fun PlayerScreen(
                 val orb1Y = canvasH * (0.15f + 0.4f * rawAnim2)
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(animatedAccent.copy(alpha = 0.7f), Color.Transparent),
+                        colors = listOf(animatedAccent.copy(alpha = 0.85f), Color.Transparent),
                         center = Offset(orb1X, orb1Y),
-                        radius = canvasW * 0.8f
+                        radius = canvasW * 0.85f
                     ),
                     center = Offset(orb1X, orb1Y),
-                    radius = canvasW * 0.8f
+                    radius = canvasW * 0.85f
                 )
 
                 // Orb 2: Bottom-Right to Center Brownian Float
@@ -187,21 +187,21 @@ fun PlayerScreen(
                 val orb2Y = canvasH * (0.75f - 0.4f * rawAnim1)
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(animatedSecondary.copy(alpha = 0.75f), Color.Transparent),
+                        colors = listOf(animatedSecondary.copy(alpha = 0.85f), Color.Transparent),
                         center = Offset(orb2X, orb2Y),
-                        radius = canvasW * 0.9f
+                        radius = canvasW * 0.95f
                     ),
                     center = Offset(orb2X, orb2Y),
-                    radius = canvasW * 0.9f
+                    radius = canvasW * 0.95f
                 )
 
-                // Solid subtle vignette overlay for rich contrast
+                // Dark contrast gradient for maximum text legibility
                 drawRect(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color.Black.copy(alpha = 0.35f),
-                            Color.Transparent,
-                            Color.Black.copy(alpha = 0.65f)
+                            Color.Black.copy(alpha = 0.55f),
+                            Color.Black.copy(alpha = 0.25f),
+                            Color.Black.copy(alpha = 0.70f)
                         )
                     )
                 )
@@ -225,7 +225,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowDown,
                             contentDescription = "Collapse Player",
-                            tint = onSurface,
+                            tint = Color.White,
                             modifier = Modifier.size(32.dp)
                         )
                     }
@@ -233,16 +233,16 @@ fun PlayerScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "NOW PLAYING",
-                            color = primaryAccent,
+                            color = Color.White.copy(alpha = 0.7f),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         )
                         Text(
                             text = track?.album ?: "Aura Soundscape",
-                            color = onSurface,
+                            color = Color.White,
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             maxLines = 1
                         )
                     }
@@ -251,7 +251,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Default.GraphicEq,
                             contentDescription = "Audio Engine FX & EQ",
-                            tint = primaryAccent
+                            tint = Color.White
                         )
                     }
                 }
@@ -267,8 +267,8 @@ fun PlayerScreen(
                 ) {
                     Card(
                         shape = RoundedCornerShape(28.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
-                        colors = CardDefaults.cardColors(containerColor = surfaceContainer),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.3f)),
                         modifier = Modifier
                             .fillMaxWidth(0.85f)
                             .aspectRatio(1f)
@@ -276,16 +276,7 @@ fun PlayerScreen(
                             .clickable { onAlbumArtTap() }
                     ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    Brush.radialGradient(
-                                        colors = listOf(
-                                            animatedSecondary.copy(alpha = 0.5f),
-                                            surfaceContainer
-                                        )
-                                    )
-                                ),
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             SubcomposeAsyncImage(
@@ -300,7 +291,7 @@ fun PlayerScreen(
                                     Icon(
                                         imageVector = Icons.Default.MusicNote,
                                         contentDescription = "Album Artwork Canvas",
-                                        tint = primaryAccent,
+                                        tint = Color.White,
                                         modifier = Modifier.size(108.dp)
                                     )
                                 }
@@ -318,7 +309,7 @@ fun PlayerScreen(
                 ) {
                     Text(
                         text = track?.title ?: "Aura Soundscape",
-                        color = onSurface,
+                        color = Color.White,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
@@ -330,7 +321,7 @@ fun PlayerScreen(
 
                     Text(
                         text = track?.artist ?: "Aura Audio Engine",
-                        color = onSurfaceVariant,
+                        color = Color.White.copy(alpha = 0.8f),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center,
@@ -340,18 +331,18 @@ fun PlayerScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Dynamic Badges
+                    // High Contrast Frosted Glass Badges
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            color = surfaceContainer,
+                            color = Color.White.copy(alpha = 0.20f),
                             shape = CircleShape
                         ) {
                             Text(
                                 text = "${track?.codec ?: "FLAC"} • ${track?.bitDepth ?: 24}-bit/${(track?.sampleRate ?: 96000) / 1000}kHz",
-                                color = primaryAccent,
+                                color = Color.White,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -361,12 +352,12 @@ fun PlayerScreen(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Surface(
-                            color = surfaceContainer.copy(alpha = 0.8f),
+                            color = Color.White.copy(alpha = 0.20f),
                             shape = CircleShape
                         ) {
                             Text(
                                 text = "RG ${if ((track?.replayGainDb ?: 0f) >= 0) "+" else ""}${String.format("%.1f", track?.replayGainDb ?: 0.0f)}dB",
-                                color = secondaryAccent,
+                                color = Color.White,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -386,8 +377,8 @@ fun PlayerScreen(
                     MaterialSquigglySeekBar(
                         progress = progressFraction,
                         isPlaying = uiState.isPlaying,
-                        activeColor = primaryAccent,
-                        inactiveColor = onSurfaceVariant.copy(alpha = 0.35f),
+                        activeColor = Color.White,
+                        inactiveColor = Color.White.copy(alpha = 0.35f),
                         onSeek = { fraction ->
                             onSeek((fraction * totalDurationMs).toLong())
                         }
@@ -403,13 +394,13 @@ fun PlayerScreen(
                     ) {
                         Text(
                             text = formatTimeMs(currentPosMs),
-                            color = onSurfaceVariant,
+                            color = Color.White.copy(alpha = 0.85f),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             text = "${formatTimeMs(currentPosMs)} / ${formatTimeMs(totalDurationMs)}",
-                            color = onSurfaceVariant,
+                            color = Color.White.copy(alpha = 0.85f),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -418,17 +409,18 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Floating Control Bar Capsule
+                // Modern Frosted Glass Control Bar Capsule
                 Surface(
-                    color = surfaceContainer.copy(alpha = 0.95f),
+                    color = Color.Black.copy(alpha = 0.35f),
                     shape = CircleShape,
-                    shadowElevation = 16.dp,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                    shadowElevation = 24.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -436,7 +428,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.Shuffle,
                                 contentDescription = "Shuffle",
-                                tint = onSurface.copy(alpha = 0.7f)
+                                tint = Color.White.copy(alpha = 0.75f)
                             )
                         }
 
@@ -444,7 +436,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.SkipPrevious,
                                 contentDescription = "Previous Track",
-                                tint = onSurface,
+                                tint = Color.White,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -463,14 +455,14 @@ fun PlayerScreen(
                         Surface(
                             onClick = onPlayPauseToggle,
                             interactionSource = playInteractionSource,
-                            shape = RoundedCornerShape(26.dp),
-                            color = primaryAccent,
-                            shadowElevation = 8.dp,
+                            shape = CircleShape,
+                            color = Color.White,
+                            shadowElevation = 12.dp,
                             modifier = Modifier.scale(fabScale)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(72.dp)
+                                    .size(68.dp)
                                     .padding(4.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -478,7 +470,7 @@ fun PlayerScreen(
                                     imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                     contentDescription = if (uiState.isPlaying) "Pause" else "Play",
                                     tint = Color.Black,
-                                    modifier = Modifier.size(38.dp)
+                                    modifier = Modifier.size(36.dp)
                                 )
                             }
                         }
@@ -487,7 +479,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.SkipNext,
                                 contentDescription = "Next Track",
-                                tint = onSurface,
+                                tint = Color.White,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -496,7 +488,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.Lyrics,
                                 contentDescription = "Synced Lyrics",
-                                tint = primaryAccent
+                                tint = Color.White
                             )
                         }
                     }
