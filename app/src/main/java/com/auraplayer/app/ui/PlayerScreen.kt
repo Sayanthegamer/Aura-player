@@ -1,5 +1,6 @@
 package com.auraplayer.app.ui
 
+import android.graphics.Bitmap
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -28,7 +29,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Equalizer
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.MusicNote
@@ -41,7 +41,6 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -52,7 +51,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
@@ -67,6 +65,7 @@ import com.auraplayer.app.playback.PlayerUiState
 @Composable
 fun PlayerScreen(
     uiState: PlayerUiState,
+    artworkBitmap: Bitmap? = null,
     onPlayPauseToggle: () -> Unit,
     onSeek: (Long) -> Unit,
     onNextTrack: () -> Unit = {},
@@ -74,13 +73,13 @@ fun PlayerScreen(
     onAlbumArtTap: () -> Unit = {}
 ) {
     val track = uiState.currentTrack
-    val colorScheme = MaterialTheme.colorScheme
+    val dynamicColors = rememberArtworkColors(artworkBitmap)
 
     // Ambient Animated Aura Gradient Pulsing
     val infiniteTransition = rememberInfiniteTransition(label = "auraTransition")
     val auraScale by infiniteTransition.animateFloat(
         initialValue = 1.0f,
-        targetValue = 1.25f,
+        targetValue = 1.28f,
         animationSpec = infiniteRepeatable(
             animation = tween(4000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -99,23 +98,33 @@ fun PlayerScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = colorScheme.background
+        color = dynamicColors.dominantBg
     ) {
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            dynamicColors.secondaryBg,
+                            dynamicColors.dominantBg,
+                            Color(0xFF0A090D)
+                        )
+                    )
+                )
         ) {
-            // Ambient Aura Glow Orbs (Dynamic Color Glow)
+            // Dynamic Artwork Ambient Glow Orb
             Box(
                 modifier = Modifier
-                    .size(320.dp)
+                    .size(340.dp)
                     .align(Alignment.TopCenter)
-                    .padding(top = 80.dp)
+                    .padding(top = 70.dp)
                     .scale(auraScale)
                     .background(
                         Brush.radialGradient(
                             colors = listOf(
-                                colorScheme.primary.copy(alpha = auraAlpha),
-                                colorScheme.tertiary.copy(alpha = auraAlpha * 0.5f),
+                                dynamicColors.primaryAccent.copy(alpha = auraAlpha * 0.7f),
+                                dynamicColors.secondaryAccent.copy(alpha = auraAlpha * 0.4f),
                                 Color.Transparent
                             )
                         ),
@@ -123,7 +132,7 @@ fun PlayerScreen(
                     )
             )
 
-            // Main Player Column Layout
+            // Main Player Layout
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -142,24 +151,23 @@ fun PlayerScreen(
                     Column {
                         Text(
                             text = "AURA PLAYER",
-                            color = colorScheme.primary,
+                            color = dynamicColors.primaryAccent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.5.sp
                         )
                         Text(
                             text = "Now Playing",
-                            color = colorScheme.onBackground,
+                            color = Color.White,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
                     }
 
-                    // Pixel Audio Routing Pill Badge
                     Surface(
-                        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
+                        color = dynamicColors.surfaceContainer.copy(alpha = 0.85f),
                         shape = CircleShape,
-                        shadowElevation = 4.dp
+                        shadowElevation = 6.dp
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -168,13 +176,13 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.GraphicEq,
                                 contentDescription = "Audio Output",
-                                tint = colorScheme.primary,
+                                tint = dynamicColors.primaryAccent,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Pixel Audio Engine",
-                                color = colorScheme.onSurface,
+                                text = "Dynamic Audio",
+                                color = Color.White,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -202,8 +210,8 @@ fun PlayerScreen(
                         .clip(RoundedCornerShape(40.dp))
                         .clickable { onAlbumArtTap() },
                     shape = RoundedCornerShape(40.dp),
-                    colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceContainerHigh),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 20.dp)
+                    colors = CardDefaults.cardColors(containerColor = dynamicColors.surfaceContainer),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 24.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -211,9 +219,8 @@ fun PlayerScreen(
                             .background(
                                 Brush.linearGradient(
                                     colors = listOf(
-                                        colorScheme.primaryContainer,
-                                        colorScheme.surfaceContainerHighest,
-                                        colorScheme.secondaryContainer
+                                        dynamicColors.secondaryBg,
+                                        dynamicColors.surfaceContainer
                                     )
                                 )
                             ),
@@ -222,7 +229,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Default.MusicNote,
                             contentDescription = "Album Artwork Canvas",
-                            tint = colorScheme.onPrimaryContainer,
+                            tint = dynamicColors.primaryAccent,
                             modifier = Modifier.size(108.dp)
                         )
                     }
@@ -230,31 +237,26 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Metadata & Animated Equalizer Waveform
+                // Metadata & Animated Waveform
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = track?.title ?: "Aura Soundscape",
-                            color = colorScheme.onBackground,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    Text(
+                        text = track?.title ?: "Aura Soundscape",
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
                         text = track?.artist ?: "Aura Audio Engine",
-                        color = colorScheme.onSurfaceVariant,
+                        color = Color.White.copy(alpha = 0.7f),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center,
@@ -264,24 +266,23 @@ fun PlayerScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Expressive Animated Equalizer Bars
                     if (uiState.isPlaying) {
-                        AnimatedEqualizerBars(colorScheme.primary)
+                        AnimatedEqualizerBars(dynamicColors.primaryAccent)
                         Spacer(modifier = Modifier.height(10.dp))
                     }
 
-                    // Badges: Audio Chip + ReplayGain
+                    // Dynamic Badges
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            color = colorScheme.secondaryContainer,
+                            color = dynamicColors.surfaceContainer,
                             shape = CircleShape
                         ) {
                             Text(
                                 text = "${track?.codec ?: "FLAC"} • ${track?.bitDepth ?: 24}-bit/${(track?.sampleRate ?: 96000) / 1000}kHz",
-                                color = colorScheme.onSecondaryContainer,
+                                color = dynamicColors.primaryAccent,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -291,12 +292,12 @@ fun PlayerScreen(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Surface(
-                            color = colorScheme.tertiaryContainer,
+                            color = dynamicColors.surfaceContainer.copy(alpha = 0.8f),
                             shape = CircleShape
                         ) {
                             Text(
                                 text = "RG -2.1dB",
-                                color = colorScheme.onTertiaryContainer,
+                                color = dynamicColors.secondaryAccent,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -319,9 +320,9 @@ fun PlayerScreen(
                             onSeek((fraction * totalDurationMs).toLong())
                         },
                         colors = SliderDefaults.colors(
-                            thumbColor = colorScheme.primary,
-                            activeTrackColor = colorScheme.primary,
-                            inactiveTrackColor = colorScheme.surfaceContainerHighest
+                            thumbColor = dynamicColors.primaryAccent,
+                            activeTrackColor = dynamicColors.primaryAccent,
+                            inactiveTrackColor = dynamicColors.surfaceContainer
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -334,13 +335,13 @@ fun PlayerScreen(
                     ) {
                         Text(
                             text = formatTimeMs(currentPosMs),
-                            color = colorScheme.onSurfaceVariant,
+                            color = Color.White.copy(alpha = 0.7f),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
                             text = formatTimeMs(totalDurationMs),
-                            color = colorScheme.onSurfaceVariant,
+                            color = Color.White.copy(alpha = 0.7f),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -349,11 +350,11 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Pixel Expressive Floating Control Bar with Bouncy Press Feedback
+                // Pixel Expressive Floating Control Bar Capsule
                 Surface(
-                    color = colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
+                    color = dynamicColors.surfaceContainer.copy(alpha = 0.95f),
                     shape = CircleShape,
-                    shadowElevation = 12.dp,
+                    shadowElevation = 16.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -367,7 +368,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.Shuffle,
                                 contentDescription = "Shuffle",
-                                tint = colorScheme.onSurfaceVariant
+                                tint = Color.White.copy(alpha = 0.7f)
                             )
                         }
 
@@ -375,7 +376,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.SkipPrevious,
                                 contentDescription = "Previous Track",
-                                tint = colorScheme.onSurface,
+                                tint = Color.White,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -396,7 +397,7 @@ fun PlayerScreen(
                             onClick = onPlayPauseToggle,
                             interactionSource = playInteractionSource,
                             shape = RoundedCornerShape(26.dp),
-                            color = colorScheme.primaryContainer,
+                            color = dynamicColors.primaryAccent,
                             shadowElevation = 8.dp,
                             modifier = Modifier.scale(fabScale)
                         ) {
@@ -409,7 +410,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                     contentDescription = if (uiState.isPlaying) "Pause" else "Play",
-                                    tint = colorScheme.onPrimaryContainer,
+                                    tint = dynamicColors.dominantBg,
                                     modifier = Modifier.size(38.dp)
                                 )
                             }
@@ -419,7 +420,7 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.SkipNext,
                                 contentDescription = "Next Track",
-                                tint = colorScheme.onSurface,
+                                tint = Color.White,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -428,78 +429,13 @@ fun PlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.Lyrics,
                                 contentDescription = "Synced Lyrics",
-                                tint = colorScheme.primary
+                                tint = dynamicColors.primaryAccent
                             )
                         }
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun BouncyIconButton(
-    onClick: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.84f else 1.0f,
-        animationSpec = spring(
-            stiffness = Spring.StiffnessMediumLow,
-            dampingRatio = Spring.DampingRatioMediumBouncy
-        ),
-        label = "btnScale"
-    )
-
-    Box(
-        modifier = Modifier
-            .scale(scale)
-            .clip(CircleShape)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            )
-            .padding(8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        content()
-    }
-}
-
-@Composable
-fun AnimatedEqualizerBars(tint: Color) {
-    val transition = rememberInfiniteTransition(label = "eqBars")
-
-    val h1 by transition.animateFloat(
-        initialValue = 4f, targetValue = 18f,
-        animationSpec = infiniteRepeatable(tween(450, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h1"
-    )
-    val h2 by transition.animateFloat(
-        initialValue = 18f, targetValue = 6f,
-        animationSpec = infiniteRepeatable(tween(350, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h2"
-    )
-    val h3 by transition.animateFloat(
-        initialValue = 6f, targetValue = 22f,
-        animationSpec = infiniteRepeatable(tween(550, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h3"
-    )
-    val h4 by transition.animateFloat(
-        initialValue = 20f, targetValue = 4f,
-        animationSpec = infiniteRepeatable(tween(400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h4"
-    )
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.Bottom,
-        modifier = Modifier.height(24.dp)
-    ) {
-        Box(modifier = Modifier.width(4.dp).height(h1.dp).background(tint, CircleShape))
-        Box(modifier = Modifier.width(4.dp).height(h2.dp).background(tint, CircleShape))
-        Box(modifier = Modifier.width(4.dp).height(h3.dp).background(tint, CircleShape))
-        Box(modifier = Modifier.width(4.dp).height(h4.dp).background(tint, CircleShape))
     }
 }
 
