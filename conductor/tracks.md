@@ -4,3 +4,5 @@
   *Link: [index.md](./tracks/core_player_engine_20260724/index.md)*
 - [x] **Track: Phase 2 - Home Screen, Local Media Library Scanner & Settings**
   *Link: [index.md](./archive/home_library_settings_20260724/index.md)*
+- [ ] **Track: Blacklist Folder Feature**
+  *Link: [index.md](./tracks/blacklist_folders_20260724/index.md)*
