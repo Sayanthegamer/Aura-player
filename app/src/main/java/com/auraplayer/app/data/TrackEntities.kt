@@ -23,7 +23,11 @@ data class TrackEntity(
     val bitDepth: Int = 16,
     val replayGainTrackGain: Float? = null,
     val replayGainTrackPeak: Float? = null,
-    val dateAdded: Long = 0L
+    val dateAdded: Long = 0L,
+    val bpm: Int = 0,
+    val genre: String = "Unknown",
+    val moodTags: String = "",
+    val lastPlayedTimestamp: Long = 0L
 )
 
 @Entity(tableName = "albums")

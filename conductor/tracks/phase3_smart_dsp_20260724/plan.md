@@ -16,17 +16,17 @@
 - [x] Task: Phase 1 Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: Offline Intelligent Autoplay Algorithm
-- [ ] Task: Room Database Scoring Extensions
-  - [ ] Update Room schema (`TrackEntity`) to support BPM, mood/energy tags, and play history timestamps.
-  - [ ] Create `AutoplayScorer` implementing content filtering & recency penalty math:
+- [x] Task: Room Database Scoring Extensions
+  - [x] Update Room schema (`TrackEntity`) to support BPM, mood/energy tags, and play history timestamps.
+  - [x] Create `AutoplayScorer` implementing content filtering & recency penalty math:
         $$\text{Score}(T) = (w_g \cdot S_{\text{genre}}) + (w_a \cdot S_{\text{artist}}) + (w_b \cdot S_{\text{bpm}}) + (w_m \cdot S_{\text{mood}}) - P_{\text{recency}}$$
-- [ ] Task: Pre-fetching Queue Integration
-  - [ ] Connect `PlayerManager` queue monitoring to calculate and enqueue candidate tracks on `Dispatchers.IO` when queue length drops below 2.
-  - [ ] Implement fallback hierarchy (High Score match -> Same Genre match -> Favorite non-recent track).
-  - [ ] Persist `"Autoplay Similar Tracks"` toggle setting in `DataStore` and integrate toggle in Queue UI.
-- [ ] Task: Unit Tests for Autoplay Scorer
-  - [ ] Write `AutoplayScorerTest` verifying scoring weights, recency decay penalties, and zero-candidate fallback handling.
-- [ ] Task: Phase 2 Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Pre-fetching Queue Integration
+  - [x] Connect `PlayerManager` queue monitoring to calculate and enqueue candidate tracks on `Dispatchers.IO` when queue length drops below 2.
+  - [x] Implement fallback hierarchy (High Score match -> Same Genre match -> Favorite non-recent track).
+  - [x] Persist `"Autoplay Similar Tracks"` toggle setting in `DataStore` and integrate toggle in Queue UI.
+- [x] Task: Unit Tests for Autoplay Scorer
+  - [x] Write `AutoplayScorerTest` verifying scoring weights, recency decay penalties, and zero-candidate fallback handling.
+- [x] Task: Phase 2 Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 3: Background Scrobbling Infrastructure
 - [ ] Task: Scrobble Queue Persistence & Threshold Monitor
