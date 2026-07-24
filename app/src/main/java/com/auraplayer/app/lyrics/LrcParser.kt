@@ -35,9 +35,6 @@ object LrcParser {
         for (i in sortedRaw.indices) {
             val currentRaw = sortedRaw[i]
             val lineStartMs = currentRaw.startMs
-            val nextLineStartMs = if (i < sortedRaw.size - 1) sortedRaw[i + 1].startMs else lineStartMs + 4000L
-            val lineDuration = (nextLineStartMs - lineStartMs).coerceAtLeast(1000L)
-
             val text = currentRaw.text
             val wordTokens = mutableListOf<WordToken>()
             var cleanContent = ""
@@ -96,15 +93,6 @@ object LrcParser {
 
             if (wordTokens.isEmpty()) {
                 cleanContent = text.trim()
-                val words = cleanContent.split("\\s+".toRegex()).filter { it.isNotBlank() }
-                if (words.isNotEmpty()) {
-                    val timePerWord = lineDuration / words.size
-                    words.forEachIndexed { wordIdx, wordStr ->
-                        val wStartMs = lineStartMs + (wordIdx * timePerWord)
-                        val wEndMs = wStartMs + timePerWord
-                        wordTokens.add(WordToken(word = wordStr, startMs = wStartMs, endMs = wEndMs))
-                    }
-                }
             } else {
                 // Adjust word endMs based on next word startMs
                 for (wIdx in 0 until wordTokens.size - 1) {
