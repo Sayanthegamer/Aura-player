@@ -14,17 +14,17 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 1.3: ReplayGain & Audio Metadata Extraction
-- [ ] Task: Implement `MetadataExtractor` using `jaudiotagger` for sample rate, bitrate, codec, `REPLAYGAIN_TRACK_GAIN`, and `REPLAYGAIN_TRACK_PEAK`.
-- [ ] Task: Write TDD unit tests for ReplayGain gain-to-scale calculation with peak clamping ($\text{scale}_{\text{final}} = \min\left(10^{\frac{\text{gain\_db}}{20}},\, \frac{1.0}{\text{peak}}\right)$) verifying anti-clipping when $\text{scale} \times \text{peak} > 1.0$.
-- [ ] Task: Connect ReplayGain volume adjustments dynamically to ExoPlayer via `player.setVolume(scale)` to preserve hardware audio offload.
-- [ ] Task: Render `AudioQualityChip` and `ReplayGainBadge` in Compose UI.
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Implement `MetadataExtractor` using `jaudiotagger` for sample rate, bitrate, codec, `REPLAYGAIN_TRACK_GAIN`, and `REPLAYGAIN_TRACK_PEAK`. (95e415d)
+- [x] Task: Write TDD unit tests for ReplayGain gain-to-scale calculation with peak clamping ($\text{scale}_{\text{final}} = \min\left(10^{\frac{\text{gain\_db}}{20}},\, \frac{1.0}{\text{peak}}\right)$) verifying anti-clipping when $\text{scale} \times \text{peak} > 1.0$. (95e415d)
+- [x] Task: Connect ReplayGain volume adjustments dynamically to ExoPlayer via `player.setVolume(scale)` to preserve hardware audio offload. (95e415d)
+- [x] Task: Render `AudioQualityChip` and `ReplayGainBadge` in Compose UI. (95e415d)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 1.4: LRCLIB Word-by-Word Synced Lyric Engine
-- [ ] Task: Implement 3-tier lyric resolution pipeline (`jaudiotagger` embedded `SYLT`/`USLT` tags $\rightarrow$ Room Database cache $\rightarrow$ `LrclibRepository` API).
-- [ ] Task: Implement `LrcParser` for standard and enhanced (word-timestamped) LRC lyrics.
-- [ ] Task: Write unit tests for `LrcParser` verifying millisecond parsing accuracy.
-- [ ] Task: Build Room DB caching layer for LRCLIB responses and per-track lyric sync manual offset persistence ($\pm \text{ms}$).
-- [ ] Task: Build Compose `LyricCanvas` with lambda-based state wrappers and `Modifier.drawWithContent` / `GraphicsLayer` animations for 60/120Hz rendering without recomposition jank, including manual offset adjustment slider linked to Room DB.
-- [ ] Task: Connect album art tap cross-fade to `LyricCanvas`.
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Implement 3-tier lyric resolution pipeline (`jaudiotagger` embedded `SYLT`/`USLT` tags $\rightarrow$ Room Database cache $\rightarrow$ `LrclibRepository` API). (f515c5d)
+- [x] Task: Implement `LrcParser` for standard and enhanced (word-timestamped) LRC lyrics. (f515c5d)
+- [x] Task: Write unit tests for `LrcParser` verifying millisecond parsing accuracy. (f515c5d)
+- [x] Task: Build Room DB caching layer for LRCLIB responses and per-track lyric sync manual offset persistence ($\pm \text{ms}$). (f515c5d)
+- [x] Task: Build Compose `LyricCanvas` with lambda-based state wrappers and `Modifier.drawWithContent` / `GraphicsLayer` animations for 60/120Hz rendering without recomposition jank, including manual offset adjustment slider linked to Room DB. (f515c5d)
+- [x] Task: Connect album art tap cross-fade to `LyricCanvas`. (f515c5d)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
