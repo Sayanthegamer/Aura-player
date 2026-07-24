@@ -17,10 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -61,13 +61,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.SubcomposeAsyncImage
+import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.auraplayer.app.data.AlbumEntity
 import com.auraplayer.app.data.ArtistEntity
@@ -89,13 +90,17 @@ fun HomeScreen(
     var searchQuery by remember { mutableStateOf("") }
     var isSearchActive by remember { mutableStateOf(false) }
 
-    val filteredTracks = if (searchQuery.isBlank()) tracks else tracks.filter {
-        it.title.contains(searchQuery, ignoreCase = true) ||
-                it.artistName.contains(searchQuery, ignoreCase = true) ||
-                it.albumName.contains(searchQuery, ignoreCase = true)
+    val filteredTracks = remember(searchQuery, tracks) {
+        if (searchQuery.isBlank()) tracks else tracks.filter {
+            it.title.contains(searchQuery, ignoreCase = true) ||
+                    it.artistName.contains(searchQuery, ignoreCase = true) ||
+                    it.albumName.contains(searchQuery, ignoreCase = true)
+        }
     }
 
-    val tabs = listOf("Songs (${filteredTracks.size})", "Albums (${albums.size})", "Artists (${artists.size})")
+    val tabs = remember(filteredTracks.size, albums.size, artists.size) {
+        listOf("Songs (${filteredTracks.size})", "Albums (${albums.size})", "Artists (${artists.size})")
+    }
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
@@ -265,7 +270,7 @@ private fun SongsTabContent(
         contentPadding = PaddingValues(bottom = 90.dp, top = 8.dp)
     ) {
         if (tracks.isNotEmpty()) {
-            item {
+            item(key = "hero_card", contentType = "hero") {
                 QuickPlayHeroCard(
                     firstTrack = tracks.first(),
                     onPlayClick = { onTrackSelect(tracks.first(), tracks, 0) }
@@ -273,7 +278,11 @@ private fun SongsTabContent(
             }
         }
 
-        itemsIndexed(tracks, key = { _, item -> item.id }) { index, track ->
+        itemsIndexed(
+            items = tracks,
+            key = { _, item -> item.id },
+            contentType = { _, _ -> "track_item" }
+        ) { index, track ->
             TrackListItem(
                 track = track,
                 onClick = { onTrackSelect(track, tracks, index) }
@@ -287,6 +296,8 @@ private fun QuickPlayHeroCard(
     firstTrack: TrackEntity,
     onPlayClick: () -> Unit
 ) {
+    val playPainter = rememberVectorPainter(Icons.Default.PlayArrow)
+
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -306,22 +317,16 @@ private fun QuickPlayHeroCard(
                     .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
-                SubcomposeAsyncImage(
+                AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(firstTrack.albumArtUri)
                         .crossfade(true)
                         .build(),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                    error = {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+                    placeholder = playPainter,
+                    error = playPainter,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
@@ -359,6 +364,9 @@ private fun TrackListItem(
     onClick: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    val musicNotePainter = rememberVectorPainter(Icons.Default.MusicNote)
+    val subtitleText = remember(track.artistName, track.albumName) { "${track.artistName} • ${track.albumName}" }
+    val durationText = remember(track.durationMs) { formatDuration(track.durationMs) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -374,22 +382,16 @@ private fun TrackListItem(
                 .background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center
         ) {
-            SubcomposeAsyncImage(
+            AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(track.albumArtUri)
                     .crossfade(true)
                     .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-                error = {
-                    Icon(
-                        imageVector = Icons.Default.MusicNote,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                placeholder = musicNotePainter,
+                error = musicNotePainter,
+                modifier = Modifier.fillMaxSize()
             )
         }
 
@@ -405,7 +407,7 @@ private fun TrackListItem(
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "${track.artistName} • ${track.albumName}",
+                text = subtitleText,
                 style = MaterialTheme.typography.bodyMedium,
                 fontSize = 13.sp,
                 maxLines = 1,
@@ -415,7 +417,7 @@ private fun TrackListItem(
         }
 
         Text(
-            text = formatDuration(track.durationMs),
+            text = durationText,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 8.dp)
@@ -447,6 +449,8 @@ private fun AlbumsTabContent(
     tracks: List<TrackEntity>,
     onTrackSelect: (TrackEntity, List<TrackEntity>, Int) -> Unit
 ) {
+    val albumPainter = rememberVectorPainter(Icons.Default.Album)
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier.fillMaxSize(),
@@ -454,7 +458,11 @@ private fun AlbumsTabContent(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        gridItems(albums, key = { it.id }) { album ->
+        gridItems(
+            items = albums,
+            key = { it.id },
+            contentType = { "album_item" }
+        ) { album ->
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -476,22 +484,16 @@ private fun AlbumsTabContent(
                             .background(MaterialTheme.colorScheme.tertiaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        SubcomposeAsyncImage(
+                        AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(album.albumArtUri)
                                 .crossfade(true)
                                 .build(),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize(),
-                            error = {
-                                Icon(
-                                    imageVector = Icons.Default.Album,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    modifier = Modifier.size(48.dp)
-                                )
-                            }
+                            placeholder = albumPainter,
+                            error = albumPainter,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
 
@@ -525,12 +527,20 @@ private fun ArtistsTabContent(
     tracks: List<TrackEntity>,
     onTrackSelect: (TrackEntity, List<TrackEntity>, Int) -> Unit
 ) {
+    val personPainter = rememberVectorPainter(Icons.Default.Person)
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 90.dp, top = 8.dp)
     ) {
-        items(artists, key = { it.id }) { artist ->
-            val firstArtistTrack = tracks.firstOrNull { it.artistId == artist.id }
+        items(
+            items = artists,
+            key = { it.id },
+            contentType = { "artist_item" }
+        ) { artist ->
+            val firstArtistTrack = remember(artist.id, tracks) {
+                tracks.firstOrNull { it.artistId == artist.id }
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -550,22 +560,16 @@ private fun ArtistsTabContent(
                         .background(MaterialTheme.colorScheme.secondaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    SubcomposeAsyncImage(
+                    AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(firstArtistTrack?.albumArtUri)
                             .crossfade(true)
                             .build(),
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                        error = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
+                        placeholder = personPainter,
+                        error = personPainter,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
 
