@@ -4,7 +4,7 @@
 - [x] Task: Scaffold base Android application structure (`com.auraplayer.app`) with Gradle Kotlin DSL (`build.gradle.kts`, `settings.gradle.kts`, `AndroidManifest.xml`). (bb27681)
 - [x] Task: Configure Android 15 foreground service declarations (`android:foregroundServiceType="mediaPlayback"`), `POST_NOTIFICATIONS` runtime permissions, Media3, Jetpack Compose Material 3, Room, jaudiotagger, and Ktor/OkHttp dependencies. (a570549)
 - [x] Task: Verify base project compilation with `./gradlew assembleDebug`. (5846293)
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 1.2: Core ExoPlayer & Media3 Service
 - [ ] Task: Implement `PlaybackService` extending Media3 `MediaSessionService` with foreground service handling.
