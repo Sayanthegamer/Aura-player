@@ -69,17 +69,6 @@ class PlayerManager(
     init {
         activeSession = mediaSession
 
-        val serviceIntent = Intent(context, PlaybackService::class.java)
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent)
-            } else {
-                context.startService(serviceIntent)
-            }
-        } catch (e: Exception) {
-            // Service startup fallback
-        }
-
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _uiState.update { it.copy(isPlaying = isPlaying) }

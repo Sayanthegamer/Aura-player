@@ -3,6 +3,7 @@ package com.auraplayer.app.ui
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontStyle
@@ -58,6 +62,7 @@ fun LyricCanvas(
     manualOffsetMs: Long,
     onOffsetChange: (Long) -> Unit,
     onClose: () -> Unit,
+    onSeek: (Long) -> Unit = {},
     isLoading: Boolean = false,
     trackTitle: String = ""
 ) {
@@ -78,175 +83,206 @@ fun LyricCanvas(
         if (lyrics.lines.isNotEmpty()) {
             listState.animateScrollToItem(
                 index = activeIndex.coerceAtLeast(0),
-                scrollOffset = -250
+                scrollOffset = -220
             )
         }
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = colorScheme.background
+    // Apple Music Ethereal Background Gradient
+    val ambientGradient = remember(colorScheme.primary, colorScheme.tertiary) {
+        Brush.verticalGradient(
+            colors = listOf(
+                colorScheme.surface.copy(alpha = 0.95f),
+                colorScheme.primaryContainer.copy(alpha = 0.40f),
+                colorScheme.surface
+            )
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(ambientGradient)
     ) {
+        // Ethereal Glow Orbs
         Box(
             modifier = Modifier
+                .size(320.dp)
+                .align(Alignment.TopEnd)
+                .graphicsLayer { alpha = 0.25f }
+                .blur(80.dp)
+                .background(colorScheme.primary)
+        )
+        Box(
+            modifier = Modifier
+                .size(360.dp)
+                .align(Alignment.BottomStart)
+                .graphicsLayer { alpha = 0.20f }
+                .blur(90.dp)
+                .background(colorScheme.tertiary)
+        )
+
+        Column(
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 24.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Top Header
-                Row(
+            // Top Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "LIVE LYRICS • ${lyrics.source.uppercase()}",
+                        color = colorScheme.primary,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 2.5.sp
+                    )
+                    Text(
+                        text = if (trackTitle.isNotBlank()) trackTitle else "Apple Music View",
+                        color = colorScheme.onBackground,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+                }
+
+                Row {
+                    IconButton(onClick = { showOffsetSlider = !showOffsetSlider }) {
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = "Adjust Lyric Offset",
+                            tint = if (showOffsetSlider) colorScheme.primary else colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = onClose) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close Lyrics",
+                            tint = colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+
+            // Manual Offset Slider
+            if (showOffsetSlider) {
+                Surface(
+                    color = colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
+                    shape = RoundedCornerShape(20.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(vertical = 12.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = "SYNCED LYRICS (${lyrics.source})",
-                            color = colorScheme.primary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.5.sp
-                        )
-                        Text(
-                            text = if (trackTitle.isNotBlank()) trackTitle else "Live Canvas",
-                            color = colorScheme.onBackground,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1
-                        )
-                    }
-
-                    Row {
-                        IconButton(onClick = { showOffsetSlider = !showOffsetSlider }) {
-                            Icon(
-                                imageVector = Icons.Default.Tune,
-                                contentDescription = "Adjust Lyric Offset",
-                                tint = if (showOffsetSlider) colorScheme.primary else colorScheme.onSurface
-                            )
-                        }
-                        IconButton(onClick = onClose) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close Lyrics",
-                                tint = colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-
-                // Manual Offset Slider
-                if (showOffsetSlider) {
-                    Surface(
-                        color = colorScheme.surfaceContainerHigh,
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Manual Sync Offset",
-                                    color = colorScheme.onSurface,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "${if (manualOffsetMs >= 0) "+" else ""}${manualOffsetMs} ms",
-                                    color = colorScheme.primary,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Slider(
-                                value = manualOffsetMs.toFloat(),
-                                onValueChange = { onOffsetChange(it.toLong()) },
-                                valueRange = -5000f..5000f,
-                                colors = SliderDefaults.colors(
-                                    thumbColor = colorScheme.primary,
-                                    activeTrackColor = colorScheme.primary,
-                                    inactiveTrackColor = colorScheme.surfaceContainerHighest
-                                )
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Content: Loading / Empty / Syllable & Romanized Lyrics
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(
-                                color = colorScheme.primary,
-                                modifier = Modifier.size(44.dp)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text(
-                                text = "Fetching synced lyrics from LRCLIB & LyricsPlus...",
-                                color = colorScheme.onSurfaceVariant,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium
+                                text = "Manual Sync Offset",
+                                color = colorScheme.onSurface,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "${if (manualOffsetMs >= 0) "+" else ""}${manualOffsetMs} ms",
+                                color = colorScheme.primary,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
+
+                        Slider(
+                            value = manualOffsetMs.toFloat(),
+                            onValueChange = { onOffsetChange(it.toLong()) },
+                            valueRange = -5000f..5000f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = colorScheme.primary,
+                                activeTrackColor = colorScheme.primary,
+                                inactiveTrackColor = colorScheme.surfaceContainerHighest
+                            )
+                        )
                     }
-                } else if (lyrics.lines.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Content: Loading / Empty / Ethereal Lyrics List
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(
+                            color = colorScheme.primary,
+                            modifier = Modifier.size(44.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No synced lyrics found for this track",
+                            text = "Fetching synced lyrics from LRCLIB & LyricsPlus...",
                             color = colorScheme.onSurfaceVariant,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
-                } else {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(24.dp)
-                    ) {
-                        itemsIndexed(lyrics.lines) { index, line ->
-                            val isActive = index == activeIndex
-                            val alpha by animateFloatAsState(
-                                targetValue = if (isActive) 1.0f else 0.35f,
-                                animationSpec = tween(durationMillis = 300),
-                                label = "lyricAlpha"
-                            )
-                            val scale by animateFloatAsState(
-                                targetValue = if (isActive) 1.05f else 0.98f,
-                                animationSpec = tween(durationMillis = 300),
-                                label = "lyricScale"
-                            )
+                }
+            } else if (lyrics.lines.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No synced lyrics available for this track",
+                        color = colorScheme.onSurfaceVariant,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(28.dp)
+                ) {
+                    itemsIndexed(lyrics.lines) { index, line ->
+                        val isActive = index == activeIndex
+                        val alpha by animateFloatAsState(
+                            targetValue = if (isActive) 1.0f else 0.30f,
+                            animationSpec = tween(durationMillis = 350),
+                            label = "lyricAlpha"
+                        )
+                        val scale by animateFloatAsState(
+                            targetValue = if (isActive) 1.06f else 0.94f,
+                            animationSpec = tween(durationMillis = 350),
+                            label = "lyricScale"
+                        )
 
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .graphicsLayer {
-                                        this.alpha = alpha
-                                        this.scaleX = scale
-                                        this.scaleY = scale
-                                    }
-                            ) {
-                                WordSyncedLine(
-                                    line = line,
-                                    currentPositionMs = currentPositionMs,
-                                    isActive = isActive,
-                                    colorScheme = colorScheme
-                                )
-                            }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .graphicsLayer {
+                                    this.alpha = alpha
+                                    this.scaleX = scale
+                                    this.scaleY = scale
+                                }
+                                .clickable {
+                                    onSeek(line.startMs)
+                                }
+                        ) {
+                            AppleMusicWordLine(
+                                line = line,
+                                currentPositionMs = currentPositionMs,
+                                isActive = isActive,
+                                colorScheme = colorScheme
+                            )
                         }
                     }
                 }
@@ -257,7 +293,7 @@ fun LyricCanvas(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun WordSyncedLine(
+private fun AppleMusicWordLine(
     line: LyricLine,
     currentPositionMs: Long,
     isActive: Boolean,
@@ -267,9 +303,10 @@ private fun WordSyncedLine(
         if (!isActive || line.wordTokens.isEmpty()) {
             Text(
                 text = line.content,
-                color = if (isActive) colorScheme.onBackground else colorScheme.onSurfaceVariant,
-                fontSize = if (isActive) 24.sp else 18.sp,
-                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                color = if (isActive) Color.White else colorScheme.onSurfaceVariant,
+                fontSize = if (isActive) 30.sp else 22.sp,
+                fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.SemiBold,
+                lineHeight = if (isActive) 38.sp else 30.sp,
                 textAlign = TextAlign.Start,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -289,16 +326,17 @@ private fun WordSyncedLine(
 
                     val wordColor = lerp(
                         colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        colorScheme.primary,
+                        Color.White,
                         progress
                     )
 
                     Text(
                         text = "${token.word} ",
                         color = wordColor,
-                        fontSize = 24.sp,
-                        fontWeight = if (isCurrentWord || isPastWord) FontWeight.ExtraBold else FontWeight.SemiBold,
-                        modifier = Modifier.padding(end = 2.dp)
+                        fontSize = 30.sp,
+                        fontWeight = if (isCurrentWord || isPastWord) FontWeight.Black else FontWeight.Bold,
+                        lineHeight = 38.sp,
+                        modifier = Modifier.padding(end = 3.dp)
                     )
                 }
             }
@@ -307,11 +345,11 @@ private fun WordSyncedLine(
         // Render Romanization or Translation sub-line if available
         val subText = line.romanization ?: line.translation
         if (!subText.isNullOrBlank()) {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = subText,
-                color = if (isActive) colorScheme.secondary else colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                fontSize = if (isActive) 16.sp else 13.sp,
+                color = if (isActive) colorScheme.primary else colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                fontSize = if (isActive) 18.sp else 14.sp,
                 fontWeight = FontWeight.Medium,
                 fontStyle = FontStyle.Italic,
                 modifier = Modifier.fillMaxWidth()

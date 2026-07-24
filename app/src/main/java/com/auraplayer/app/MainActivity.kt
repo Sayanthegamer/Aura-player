@@ -223,6 +223,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     },
                                     onClose = { currentScreen = Screen.FullPlayer },
+                                    onSeek = { targetMs -> playerManager.seekTo(targetMs) },
                                     isLoading = isFetchingLyrics,
                                     trackTitle = uiState.currentTrack?.title ?: ""
                                 )
