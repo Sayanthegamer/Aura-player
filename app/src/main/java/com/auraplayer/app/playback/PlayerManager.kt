@@ -162,6 +162,22 @@ class PlayerManager(
         }
     }
 
+    fun skipToNext() {
+        if (player.hasNextMediaItem()) {
+            player.seekToNextMediaItem()
+        }
+    }
+
+    fun skipToPrevious() {
+        if (player.currentPosition > 3000L) {
+            player.seekTo(0)
+        } else if (player.hasPreviousMediaItem()) {
+            player.seekToPreviousMediaItem()
+        } else {
+            player.seekTo(0)
+        }
+    }
+
     fun seekTo(positionMs: Long) {
         player.seekTo(positionMs)
         _uiState.update { it.copy(currentPositionMs = positionMs) }

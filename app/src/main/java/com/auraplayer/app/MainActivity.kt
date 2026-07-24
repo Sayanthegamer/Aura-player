@@ -194,20 +194,12 @@ class MainActivity : ComponentActivity() {
                             is Screen.FullPlayer -> {
                                 PlayerScreen(
                                     uiState = uiState,
+                                    onBack = { currentScreen = Screen.Home },
                                     onPlayPauseToggle = { playerManager.togglePlayPause() },
                                     onSeek = { position -> playerManager.seekTo(position) },
-                                    onAlbumArtTap = {
-                                        currentScreen = Screen.Lyrics
-                                        uiState.currentTrack?.let { track ->
-                                            lifecycleScope.launch {
-                                                sampleLyrics = lrclibRepository.getLyrics(
-                                                    trackId = track.id,
-                                                    title = track.title,
-                                                    artist = track.artist
-                                                )
-                                            }
-                                        }
-                                    }
+                                    onNextTrack = { playerManager.skipToNext() },
+                                    onPrevTrack = { playerManager.skipToPrevious() },
+                                    onAlbumArtTap = { currentScreen = Screen.Lyrics }
                                 )
                             }
                             is Screen.Lyrics -> {
