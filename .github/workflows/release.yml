@@ -1,0 +1,136 @@
+name: Release APK
+
+# Triggers:
+#   Push a semver tag:   git tag v0.1.0-wip && git push origin v0.1.0-wip
+#   Or trigger manually from GitHub → Actions tab
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (e.g. v0.1.0-wip)'
+        required: true
+        default: 'v0.1.0-wip'
+      prerelease:
+        description: 'Mark as pre-release?'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  build-and-release:
+    name: Build & Release APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to create GitHub Releases
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. JDK 17 ────────────────────────────────────────────────────────────
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # ── 3. Gradle wrapper cache ───────────────────────────────────────────────
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      # ── 4. Permissions ───────────────────────────────────────────────────────
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      # ── 5. Build APK ─────────────────────────────────────────────────────────
+      #
+      #  Currently builds an UNSIGNED DEBUG APK — works out of the box, no keystore.
+      #
+      #  ┌─ TO UPGRADE TO A SIGNED RELEASE BUILD ──────────────────────────────┐
+      #  │  1. Generate a keystore (run once, keep the file safe):             │
+      #  │       keytool -genkey -v -keystore aura.keystore -alias aura        │
+      #  │               -keyalg RSA -keysize 4096 -validity 10000             │
+      #  │                                                                     │
+      #  │  2. Base64-encode it and save as a GitHub secret:                   │
+      #  │       Linux/Mac:  base64 -i aura.keystore | pbcopy                  │
+      #  │       Windows:    [Convert]::ToBase64String(                        │
+      #  │                     [IO.File]::ReadAllBytes("aura.keystore"))        │
+      #  │       → GitHub repo → Settings → Secrets → RELEASE_KEYSTORE        │
+      #  │                                                                     │
+      #  │  3. Add three more secrets:                                         │
+      #  │       KEYSTORE_PASSWORD  KEY_ALIAS  KEY_PASSWORD                    │
+      #  │                                                                     │
+      #  │  4. Add a signingConfigs block in app/build.gradle.kts and          │
+      #  │     switch the task below to:  ./gradlew assembleRelease            │
+      #  └─────────────────────────────────────────────────────────────────────┘
+      #
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      # ── 6. Determine tag & rename APK ────────────────────────────────────────
+      - name: Prepare release artefact
+        id: prep
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+
+          APK_SRC="app/build/outputs/apk/debug/app-debug.apk"
+          APK_NAME="Aura-${TAG}.apk"
+          APK_DEST="app/build/outputs/apk/debug/${APK_NAME}"
+
+          mv "${APK_SRC}" "${APK_DEST}"
+
+          echo "tag=${TAG}"         >> $GITHUB_OUTPUT
+          echo "apk_path=${APK_DEST}" >> $GITHUB_OUTPUT
+          echo "apk_name=${APK_NAME}"  >> $GITHUB_OUTPUT
+
+      # ── 7. Create GitHub Release ─────────────────────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.prep.outputs.tag }}
+          name: "Aura Player ${{ steps.prep.outputs.tag }}"
+          prerelease: ${{ github.event.inputs.prerelease || 'true' }}
+          draft: false
+          generate_release_notes: false
+          files: ${{ steps.prep.outputs.apk_path }}
+          body: |
+            ## Aura Player ${{ steps.prep.outputs.tag }}
+
+            > ⚠️ **Work In Progress** — early development build. UI will be rethought & redesigned.
+
+            ### What's in this build
+            - 🎵 Hi-Res local playback — FLAC / WAV / MP3 / AIFF (ExoPlayer)
+            - 🎨 Dynamic album-art colour theming + Brownian motion background
+            - 📝 Synced & word-level lyrics (LRCLib + embedded tags)
+            - 🔊 ReplayGain + anti-clipping volume normalisation
+            - 🎛️ Parametric EQ / Bass Boost / Treble (AudioDSP)
+            - 🤖 Offline autoplay engine (genre · BPM · mood · scrobble frequency)
+            - 🔀 Real shuffle toggle with active dot indicator
+            - 🔔 Lock-screen controls + media notification
+
+            ### Install
+            1. Download **`${{ steps.prep.outputs.apk_name }}`** below
+            2. On your Android device: **Settings → Install unknown apps** → enable for your browser or Files app
+            3. Tap the downloaded APK → Install
+
+            > This is an unsigned debug build. It is safe to install but cannot be updated from Play Store.
+
+            ---
+            Built from commit [`${{ github.sha }}`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
