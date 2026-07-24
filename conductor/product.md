@@ -31,14 +31,20 @@ Aura Player solves this by hiding deep features inside intuitive, contextual lay
   - Sample rate, bitrate, and codec detection (`FLAC • 24-bit/96kHz`, `MP3 • 320kbps`).
   - Sleek chip display adjacent to metadata opening Audio Output / DSP sheet.
 
-### Phase 2: Smart Features
+### Phase 2: Home Screen, Local Media Library Scanner & Settings (Completed)
+- **Local Audio MediaStore Scanner & Room Persistence:**
+  - Automatic background indexing of `.mp3`, `.flac`, `.m4a`, `.wav`, `.aac` files via `MediaStore`.
+  - Room Database layer (`TrackEntity`, `AlbumEntity`, `ArtistEntity`) with reactive StateFlow streams.
+- **Material 3 Expressive Home Screen & Mini-Player:**
+  - Tabbed Dashboard (**Songs**, **Albums**, **Artists**) with quick-play hero card and real-time search.
+  - Persistent bottom `MiniPlayer` with progress bar, play/pause toggle, and tap to expand.
+- **Comprehensive Settings Screen:**
+  - Appearance preferences (Theme Mode, Dynamic Monet Colors), Audio ReplayGain controls, and manual storage rescan trigger.
+
+### Phase 3: Smart Features & Advanced Audio DSP
 - **Offline Intelligent Autoplay Algorithm:**
   - On-device recommendation engine utilizing play history, genres, and BPM/mood tags to auto-extend queues.
 - **Scrobbling Integration:**
   - Background hooks for Last.fm, ListenBrainz, and Open Scrobbler.
-- **Advanced Audio Output Routing:**
-  - USB DAC pass-through toggles and audio output device selection.
-
-### Phase 3: Advanced Audio DSP
 - **16-Band Parametric Equalizer:**
   - 16-band EQ with Bass Boost and Treble controls in swipe-up Audio Sheet.
