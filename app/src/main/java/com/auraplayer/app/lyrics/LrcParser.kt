@@ -9,9 +9,25 @@ object LrcParser {
     private val WORD_PAREN_PATTERN = Pattern.compile("\\((\\d{2}):(\\d{2})\\.(\\d{2,3})\\)([^\\)]*)")
     private val WORD_OFFSET_PATTERN = Pattern.compile("<(\\d+)>(.[^<]*)")
 
+    private val TTML_P_PATTERN = Pattern.compile("<p\\s+[^>]*begin=\"([^\"]+)\"[^>]*>(.*?)</p>", Pattern.DOTALL or Pattern.CASE_INSENSITIVE)
+    private val TTML_SPAN_PATTERN = Pattern.compile("<span\\s+[^>]*begin=\"([^\"]+)\"[^>]*end=\"([^\"]+)\"[^>]*>(.*?)</span>", Pattern.DOTALL or Pattern.CASE_INSENSITIVE)
+
     fun parse(lrcContent: String): ParsedLyrics {
         if (lrcContent.isBlank()) return ParsedLyrics()
 
+        val trimmed = lrcContent.trim()
+        if (trimmed.contains("<ttml") || trimmed.contains("<p begin=") || trimmed.contains("xmlns=\"http://www.w3.org/ns/ttml\"")) {
+            return parseTtml(trimmed)
+        }
+
+        if (trimmed.startsWith("{") && trimmed.contains("\"lines\"")) {
+            return parseJsonLyrics(trimmed)
+        }
+
+        return parseStandardLrc(lrcContent)
+    }
+
+    private fun parseStandardLrc(lrcContent: String): ParsedLyrics {
         val rawLines = mutableListOf<RawLine>()
         var isWordSynced = false
 
@@ -97,7 +113,6 @@ object LrcParser {
             if (wordTokens.isEmpty()) {
                 cleanContent = text.trim()
             } else {
-                // Compute precise endMs for word tokens
                 for (wIdx in 0 until wordTokens.size - 1) {
                     val currentWord = wordTokens[wIdx]
                     val nextWord = wordTokens[wIdx + 1]
@@ -105,7 +120,6 @@ object LrcParser {
                 }
             }
 
-            // Check if next raw line has identical timestamp (Romanization / Translation line)
             var romanization: String? = null
             var translation: String? = null
 
@@ -136,6 +150,100 @@ object LrcParser {
             isEnhancedWordSynced = isWordSynced,
             rawContent = lrcContent
         )
+    }
+
+    private fun parseTtml(ttmlContent: String): ParsedLyrics {
+        val lines = mutableListOf<LyricLine>()
+        val pMatcher = TTML_P_PATTERN.matcher(ttmlContent)
+
+        while (pMatcher.find()) {
+            val beginStr = pMatcher.group(1) ?: "0"
+            val lineStartMs = parseTimeStringToMs(beginStr)
+            val bodyText = pMatcher.group(2) ?: ""
+
+            val wordTokens = mutableListOf<WordToken>()
+            val spanMatcher = TTML_SPAN_PATTERN.matcher(bodyText)
+            val sb = StringBuilder()
+
+            while (spanMatcher.find()) {
+                val wBeginStr = spanMatcher.group(1) ?: "0"
+                val wEndStr = spanMatcher.group(2) ?: "0"
+                val rawWord = spanMatcher.group(3)?.replace("<[^>]*>".toRegex(), "") ?: ""
+
+                val wStartMs = parseTimeStringToMs(wBeginStr)
+                val wEndMs = parseTimeStringToMs(wEndStr)
+
+                sb.append(rawWord)
+                wordTokens.add(WordToken(word = rawWord.trim(), startMs = wStartMs, endMs = wEndMs))
+            }
+
+            val cleanContent = if (wordTokens.isNotEmpty()) sb.toString().trim() else bodyText.replace("<[^>]*>".toRegex(), "").trim()
+
+            if (cleanContent.isNotBlank()) {
+                lines.add(LyricLine(startMs = lineStartMs, content = cleanContent, wordTokens = wordTokens))
+            }
+        }
+
+        return ParsedLyrics(
+            lines = lines.sortedBy { it.startMs },
+            isEnhancedWordSynced = lines.any { it.wordTokens.isNotEmpty() },
+            rawContent = ttmlContent,
+            source = "Apple Music TTML"
+        )
+    }
+
+    private fun parseJsonLyrics(jsonContent: String): ParsedLyrics {
+        val lines = mutableListOf<LyricLine>()
+
+        val lineRegex = Pattern.compile("\"startTimeMs\"\\s*:\\s*\"?(\\d+)\"?,?\\s*\"words\"\\s*:\\s*\\[(.*?)\\]", Pattern.DOTALL)
+        val wordRegex = Pattern.compile("\"word\"\\s*:\\s*\"([^\"]+)\",?\\s*\"offsetMs\"\\s*:\\s*(\\d+)")
+
+        val lineMatcher = lineRegex.matcher(jsonContent)
+        while (lineMatcher.find()) {
+            val lineStartMs = lineMatcher.group(1)?.toLongOrNull() ?: 0L
+            val wordsBlock = lineMatcher.group(2) ?: ""
+
+            val wordTokens = mutableListOf<WordToken>()
+            val wordMatcher = wordRegex.matcher(wordsBlock)
+            val sb = StringBuilder()
+
+            while (wordMatcher.find()) {
+                val wordStr = wordMatcher.group(1) ?: ""
+                val offsetMs = wordMatcher.group(2)?.toLongOrNull() ?: 0L
+                val wStartMs = lineStartMs + offsetMs
+
+                sb.append(wordStr).append(" ")
+                wordTokens.add(WordToken(word = wordStr, startMs = wStartMs, endMs = wStartMs + 350L))
+            }
+
+            val cleanText = sb.toString().trim()
+            if (cleanText.isNotBlank()) {
+                lines.add(LyricLine(startMs = lineStartMs, content = cleanText, wordTokens = wordTokens))
+            }
+        }
+
+        return ParsedLyrics(
+            lines = lines.sortedBy { it.startMs },
+            isEnhancedWordSynced = lines.any { it.wordTokens.isNotEmpty() },
+            rawContent = jsonContent,
+            source = "Spotify/Musixmatch Syllables"
+        )
+    }
+
+    private fun parseTimeStringToMs(timeStr: String): Long {
+        val clean = timeStr.replace("s", "").trim()
+        if (clean.contains(":")) {
+            val parts = clean.split(":")
+            if (parts.size >= 2) {
+                val min = parts[0].toLongOrNull() ?: 0L
+                val secParts = parts[1].split(".")
+                val sec = secParts[0].toLongOrNull() ?: 0L
+                val ms = if (secParts.size > 1) parseFractionalMs(secParts[1]) else 0L
+                return (min * 60 * 1000) + (sec * 1000) + ms
+            }
+        }
+        val secDouble = clean.toDoubleOrNull() ?: 0.0
+        return (secDouble * 1000).toLong()
     }
 
     private fun isLatinText(text: String): Boolean {

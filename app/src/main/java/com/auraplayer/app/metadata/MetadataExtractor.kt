@@ -46,7 +46,13 @@ object MetadataExtractor {
             val replayGainDb = parseReplayGainDb(gainString)
             val replayGainPeak = parseReplayGainPeak(peakString)
 
-            val unsyncedLyrics = tag?.getFirst(FieldKey.LYRICS)?.ifBlank { null }
+            val embeddedLyrics = tag?.getFirst("SYLT")?.ifBlank { null }
+                ?: tag?.getFirst("TTML")?.ifBlank { null }
+                ?: tag?.getFirst("AMLL")?.ifBlank { null }
+                ?: tag?.getFirst("LYRICSPLUS")?.ifBlank { null }
+                ?: tag?.getFirst("SYNCEDLYRICS")?.ifBlank { null }
+                ?: tag?.getFirst("UNSYNCEDLYRICS")?.ifBlank { null }
+                ?: tag?.getFirst(FieldKey.LYRICS)?.ifBlank { null }
 
             AudioMetadataResult(
                 metadata = TrackMetadata(
@@ -62,8 +68,8 @@ object MetadataExtractor {
                     replayGainDb = replayGainDb,
                     replayGainPeak = replayGainPeak
                 ),
-                embeddedLyrics = unsyncedLyrics,
-                isSyncedLyric = false
+                embeddedLyrics = embeddedLyrics,
+                isSyncedLyric = embeddedLyrics != null && (embeddedLyrics.contains("[") || embeddedLyrics.contains("<"))
             )
         } catch (e: Exception) {
             AudioMetadataResult(
