@@ -104,30 +104,35 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Permission Launcher
+                // Permission Launcher for Media Access & System Notifications
+                val permissionsToRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    arrayOf(Manifest.permission.READ_MEDIA_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                }
+
                 val permissionLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission()
-                ) { isGranted ->
-                    if (isGranted) {
+                    contract = ActivityResultContracts.RequestMultiplePermissions()
+                ) { permissions ->
+                    val storageGranted = permissions[Manifest.permission.READ_MEDIA_AUDIO] == true ||
+                            permissions[Manifest.permission.READ_EXTERNAL_STORAGE] == true
+                    if (storageGranted) {
                         lifecycleScope.launch {
-                            musicRepository.rescanLibrary(settings.blacklistedFolders)
+                            if (tracks.isEmpty()) {
+                                musicRepository.rescanLibrary(settings.blacklistedFolders)
+                            }
                         }
                     }
                 }
 
                 LaunchedEffect(Unit) {
-                    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        Manifest.permission.READ_MEDIA_AUDIO
-                    } else {
-                        Manifest.permission.READ_EXTERNAL_STORAGE
-                    }
-
-                    if (ContextCompat.checkSelfPermission(this@MainActivity, permission) == PackageManager.PERMISSION_GRANTED) {
+                    val primaryPermission = permissionsToRequest.first()
+                    if (ContextCompat.checkSelfPermission(this@MainActivity, primaryPermission) == PackageManager.PERMISSION_GRANTED) {
                         if (tracks.isEmpty()) {
                             musicRepository.rescanLibrary(settings.blacklistedFolders)
                         }
                     } else {
-                        permissionLauncher.launch(permission)
+                        permissionLauncher.launch(permissionsToRequest)
                     }
                 }
 

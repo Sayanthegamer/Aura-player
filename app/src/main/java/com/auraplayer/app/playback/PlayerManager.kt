@@ -1,12 +1,17 @@
 package com.auraplayer.app.playback
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.os.Build
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaSession
+import com.auraplayer.app.MainActivity
 import com.auraplayer.app.data.TrackEntity
 import com.auraplayer.app.metadata.MetadataExtractor
 import kotlinx.coroutines.CoroutineScope
@@ -21,9 +26,15 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
 class PlayerManager(
-    context: Context,
+    private val context: Context,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) {
+    companion object {
+        @Volatile
+        var activeSession: MediaSession? = null
+            private set
+    }
+
     val player: ExoPlayer = ExoPlayer.Builder(context)
         .setAudioAttributes(
             AudioAttributes.Builder()
@@ -36,6 +47,19 @@ class PlayerManager(
         .setWakeMode(C.WAKE_MODE_LOCAL)
         .build()
 
+    private val sessionActivityPendingIntent: PendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        },
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    )
+
+    val mediaSession: MediaSession = MediaSession.Builder(context, player)
+        .setSessionActivity(sessionActivityPendingIntent)
+        .build()
+
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
 
@@ -43,6 +67,19 @@ class PlayerManager(
     private var positionUpdateJob: Job? = null
 
     init {
+        activeSession = mediaSession
+
+        val serviceIntent = Intent(context, PlaybackService::class.java)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
+        } catch (e: Exception) {
+            // Service startup fallback
+        }
+
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _uiState.update { it.copy(isPlaying = isPlaying) }
@@ -236,6 +273,8 @@ class PlayerManager(
 
     fun release() {
         stopPositionUpdates()
+        mediaSession.release()
+        activeSession = null
         player.release()
     }
 }
