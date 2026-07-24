@@ -141,12 +141,12 @@ fun PlayerScreen(
         label = "brownian2"
     )
 
-    // Vibrant Palette Color extraction with M3 Expressive fallback tokens
+    // Vibrant Palette Color extraction with smooth animated color transitions
     val themeColorScheme = MaterialTheme.colorScheme
 
-    val primaryAccent = if (accentColor != Color(0xFFD0BCFF)) accentColor else themeColorScheme.primary
-    val secondaryAccent = if (secondaryColor != Color(0xFF381E72)) secondaryColor else themeColorScheme.secondary
-    val dominantBg = if (dominantColor != Color(0xFF1E1B2E)) dominantColor else themeColorScheme.background
+    val primaryAccent = if (animatedAccent != Color(0xFFD0BCFF)) animatedAccent else themeColorScheme.primary
+    val secondaryAccent = if (animatedSecondary != Color(0xFF381E72)) animatedSecondary else themeColorScheme.secondary
+    val dominantBg = if (animatedDominant != Color(0xFF1E1B2E)) animatedDominant else themeColorScheme.background
 
     val surfaceContainer = primaryAccent.copy(alpha = 0.22f)
     val onSurface = Color.White

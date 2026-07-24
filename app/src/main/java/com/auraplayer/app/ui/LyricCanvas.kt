@@ -422,9 +422,6 @@ private fun AppleMusicWordLine(
                     .graphicsLayer {
                         this.scaleX = lineScale
                         this.scaleY = lineScale
-                        this.shadowElevation = if (isActive) 14.dp.toPx() else 0f
-                        this.spotShadowColor = shadowColor
-                        this.ambientShadowColor = shadowColor
                     }
             )
         } else {
@@ -461,8 +458,6 @@ private fun AppleMusicWordLine(
                         progress
                     )
 
-                    val shadowColor = primaryAccent.copy(alpha = if (isCurrentWord) 0.85f else 0f)
-
                     Text(
                         text = token.word,
                         color = wordColor,
@@ -473,9 +468,6 @@ private fun AppleMusicWordLine(
                             .graphicsLayer {
                                 this.scaleX = wordScale
                                 this.scaleY = wordScale
-                                this.shadowElevation = if (isCurrentWord) (if (isExtendedNote) 18.dp.toPx() else 12.dp.toPx()) else 0f
-                                this.spotShadowColor = shadowColor
-                                this.ambientShadowColor = shadowColor
                             }
                             .padding(end = if (isCurrentWord) 6.dp else 3.dp)
                     )
