@@ -95,7 +95,7 @@ class MainActivity : ComponentActivity() {
                 ) { isGranted ->
                     if (isGranted) {
                         lifecycleScope.launch {
-                            musicRepository.rescanLibrary()
+                            musicRepository.rescanLibrary(settings.blacklistedFolders)
                         }
                     }
                 }
@@ -109,7 +109,7 @@ class MainActivity : ComponentActivity() {
 
                     if (ContextCompat.checkSelfPermission(this@MainActivity, permission) == PackageManager.PERMISSION_GRANTED) {
                         if (tracks.isEmpty()) {
-                            musicRepository.rescanLibrary()
+                            musicRepository.rescanLibrary(settings.blacklistedFolders)
                         }
                     } else {
                         permissionLauncher.launch(permission)
@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onOpenSettings = { currentScreen = Screen.Settings },
                                         onRescanClick = {
-                                            lifecycleScope.launch { musicRepository.rescanLibrary() }
+                                            lifecycleScope.launch { musicRepository.rescanLibrary(settings.blacklistedFolders) }
                                         },
                                         modifier = Modifier.padding(innerPadding)
                                     )
@@ -161,8 +161,20 @@ class MainActivity : ComponentActivity() {
                                     onAntiClippingToggle = { enabled ->
                                         coroutineScope.launch { settingsPreferences.setAntiClippingEnabled(enabled) }
                                     },
+                                    onAddBlacklistFolder = { folder ->
+                                        coroutineScope.launch {
+                                            settingsPreferences.addBlacklistedFolder(folder)
+                                            musicRepository.rescanLibrary(settings.blacklistedFolders + folder)
+                                        }
+                                    },
+                                    onRemoveBlacklistFolder = { folder ->
+                                        coroutineScope.launch {
+                                            settingsPreferences.removeBlacklistedFolder(folder)
+                                            musicRepository.rescanLibrary(settings.blacklistedFolders - folder)
+                                        }
+                                    },
                                     onRescanClick = {
-                                        lifecycleScope.launch { musicRepository.rescanLibrary() }
+                                        lifecycleScope.launch { musicRepository.rescanLibrary(settings.blacklistedFolders) }
                                     }
                                 )
                             }

@@ -25,7 +25,7 @@ class MediaScanner(
     private val _scanState = MutableStateFlow<ScanState>(ScanState.Idle)
     val scanState: StateFlow<ScanState> = _scanState.asStateFlow()
 
-    suspend fun scanLibrary(): Int = withContext(Dispatchers.IO) {
+    suspend fun scanLibrary(blacklistedFolders: Set<String> = emptySet()): Int = withContext(Dispatchers.IO) {
         try {
             _scanState.value = ScanState.Scanning(0, 0)
             val contentResolver: ContentResolver = context.contentResolver
@@ -74,6 +74,19 @@ class MediaScanner(
                 _scanState.value = ScanState.Scanning(0, totalCount)
 
                 while (cursor.moveToNext()) {
+                    val filePath = cursor.getString(dataColumn) ?: ""
+
+                    val isBlacklisted = blacklistedFolders.any { folder ->
+                        folder.isNotBlank() && filePath.lowercase().contains(folder.lowercase())
+                    }
+                    if (isBlacklisted) {
+                        processedCount++
+                        if (processedCount % 10 == 0 || processedCount == totalCount) {
+                            _scanState.value = ScanState.Scanning(processedCount, totalCount)
+                        }
+                        continue
+                    }
+
                     val id = cursor.getLong(idColumn)
                     val title = cursor.getString(titleColumn) ?: "Unknown Track"
                     val artist = cursor.getString(artistColumn) ?: "Unknown Artist"
@@ -81,7 +94,6 @@ class MediaScanner(
                     val artistId = cursor.getLong(artistIdColumn)
                     val albumId = cursor.getLong(albumIdColumn)
                     val duration = cursor.getLong(durationColumn)
-                    val filePath = cursor.getString(dataColumn) ?: ""
                     val mimeType = cursor.getString(mimeTypeColumn) ?: "audio/*"
                     val dateAdded = cursor.getLong(dateAddedColumn)
 

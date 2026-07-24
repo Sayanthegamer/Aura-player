@@ -29,7 +29,7 @@ class MusicRepository(
 
     suspend fun getTrackById(id: Long): TrackEntity? = database.trackDao().getTrackById(id)
 
-    suspend fun rescanLibrary(): Int {
-        return mediaScanner.scanLibrary()
+    suspend fun rescanLibrary(blacklistedFolders: Set<String> = emptySet()): Int {
+        return mediaScanner.scanLibrary(blacklistedFolders)
     }
 }
