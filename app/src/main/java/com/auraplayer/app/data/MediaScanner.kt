@@ -5,13 +5,11 @@ import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
-import com.auraplayer.app.metadata.MetadataExtractor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
-import java.io.File
 
 sealed class ScanState {
     object Idle : ScanState()
@@ -26,6 +24,14 @@ class MediaScanner(
 ) {
     private val _scanState = MutableStateFlow<ScanState>(ScanState.Idle)
     val scanState: StateFlow<ScanState> = _scanState.asStateFlow()
+
+    private val defaultExcludedFolderKeywords = listOf(
+        "recordings",
+        "voicerecorder",
+        "callrecordings",
+        "soundrecorder",
+        "whatsapp audio"
+    )
 
     suspend fun scanLibrary(blacklistedFolders: Set<String> = emptySet()): Int = withContext(Dispatchers.IO) {
         try {
@@ -51,12 +57,14 @@ class MediaScanner(
                 MediaStore.Audio.Media.DATE_ADDED
             )
 
-            val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= 5000"
+            val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= 10000"
             val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
 
             val tracksList = mutableListOf<TrackEntity>()
             val albumMap = mutableMapOf<Long, AlbumEntity>()
             val artistMap = mutableMapOf<Long, ArtistEntity>()
+
+            val activeBlacklist = (blacklistedFolders + defaultExcludedFolderKeywords).filter { it.isNotBlank() }
 
             contentResolver.query(collection, projection, selection, null, sortOrder)?.use { cursor ->
                 val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
@@ -78,14 +86,11 @@ class MediaScanner(
                 while (cursor.moveToNext()) {
                     val filePath = cursor.getString(dataColumn) ?: ""
 
-                    val isBlacklisted = blacklistedFolders.any { folder ->
-                        folder.isNotBlank() && filePath.lowercase().contains(folder.lowercase())
+                    val isBlacklisted = activeBlacklist.any { folder ->
+                        filePath.lowercase().contains(folder.lowercase())
                     }
                     if (isBlacklisted) {
                         processedCount++
-                        if (processedCount % 10 == 0 || processedCount == totalCount) {
-                            _scanState.value = ScanState.Scanning(processedCount, totalCount)
-                        }
                         continue
                     }
 
@@ -105,15 +110,7 @@ class MediaScanner(
                         albumId
                     ).toString()
 
-                    // Extract actual audio tags via jaudiotagger
-                    val audioFile = File(filePath)
-                    val extracted = if (audioFile.exists()) {
-                        try { MetadataExtractor.extract(audioFile) } catch (e: Exception) { null }
-                    } else null
-
-                    val metadata = extracted?.metadata
-
-                    val codec = metadata?.codec?.takeIf { it.isNotBlank() && it != "UNKNOWN" } ?: when {
+                    val codec = when {
                         mimeType.contains("flac", ignoreCase = true) || filePath.endsWith(".flac", ignoreCase = true) -> "FLAC"
                         mimeType.contains("aac", ignoreCase = true) || filePath.endsWith(".aac", ignoreCase = true) -> "AAC"
                         mimeType.contains("m4a", ignoreCase = true) || filePath.endsWith(".m4a", ignoreCase = true) -> "M4A"
@@ -122,11 +119,7 @@ class MediaScanner(
                         else -> "MP3"
                     }
 
-                    val sampleRate = if ((metadata?.sampleRate ?: 0) > 0) metadata!!.sampleRate else 44100
-                    val bitDepth = if ((metadata?.bitDepth ?: 0) > 0) metadata!!.bitDepth else if (codec == "FLAC" || codec == "WAV") 24 else 16
-                    val bitrate = if ((metadata?.bitrateKbps ?: 0) > 0) metadata!!.bitrateKbps else 320
-                    val replayGainTrackGain = metadata?.replayGainDb
-                    val replayGainTrackPeak = metadata?.replayGainPeak
+                    val bitDepth = if (codec == "FLAC" || codec == "WAV") 24 else 16
 
                     val trackEntity = TrackEntity(
                         id = id,
@@ -136,23 +129,22 @@ class MediaScanner(
                         albumName = album,
                         artistId = artistId,
                         albumId = albumId,
-                        durationMs = if (duration > 0) duration else (metadata?.durationMs ?: 0L),
+                        durationMs = duration,
                         filePath = filePath,
                         uriString = contentUri.toString(),
                         albumArtUri = albumArtUri,
                         mimeType = mimeType,
                         codec = codec,
-                        bitrate = bitrate,
-                        sampleRate = sampleRate,
+                        bitrate = 320,
+                        sampleRate = 44100,
                         bitDepth = bitDepth,
-                        replayGainTrackGain = replayGainTrackGain,
-                        replayGainTrackPeak = replayGainTrackPeak,
+                        replayGainTrackGain = null,
+                        replayGainTrackPeak = null,
                         dateAdded = dateAdded
                     )
 
                     tracksList.add(trackEntity)
 
-                    // Track counts for album & artist
                     val existingAlbum = albumMap[albumId]
                     if (existingAlbum == null) {
                         albumMap[albumId] = AlbumEntity(
@@ -179,13 +171,12 @@ class MediaScanner(
                     }
 
                     processedCount++
-                    if (processedCount % 10 == 0 || processedCount == totalCount) {
+                    if (processedCount % 50 == 0 || processedCount == totalCount) {
                         _scanState.value = ScanState.Scanning(processedCount, totalCount)
                     }
                 }
             }
 
-            // Transaction / DB Insert
             database.trackDao().deleteAllTracks()
             database.albumDao().deleteAllAlbums()
             database.artistDao().deleteAllArtists()

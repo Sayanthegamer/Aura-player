@@ -86,8 +86,21 @@ class MainActivity : ComponentActivity() {
 
                 var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
                 var sampleLyrics by remember { mutableStateOf(ParsedLyrics()) }
+                var isFetchingLyrics by remember { mutableStateOf(false) }
                 var manualOffsetMs by remember { mutableStateOf(0L) }
                 val coroutineScope = rememberCoroutineScope()
+
+                LaunchedEffect(uiState.currentTrack?.id) {
+                    uiState.currentTrack?.let { track ->
+                        isFetchingLyrics = true
+                        sampleLyrics = lrclibRepository.getLyrics(
+                            trackId = track.id,
+                            title = track.title,
+                            artist = track.artist
+                        )
+                        isFetchingLyrics = false
+                    }
+                }
 
                 // Permission Launcher
                 val permissionLauncher = rememberLauncherForActivityResult(
@@ -210,7 +223,9 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
                                     },
-                                    onClose = { currentScreen = Screen.FullPlayer }
+                                    onClose = { currentScreen = Screen.FullPlayer },
+                                    isLoading = isFetchingLyrics,
+                                    trackTitle = uiState.currentTrack?.title ?: ""
                                 )
                             }
                         }

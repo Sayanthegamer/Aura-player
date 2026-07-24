@@ -5,16 +5,18 @@ import java.util.regex.Pattern
 object LrcParser {
 
     private val LINE_TIMESTAMP_PATTERN = Pattern.compile("\\[(\\d{2}):(\\d{2})\\.(\\d{2,3})\\](.*)")
-    private val WORD_TIMESTAMP_PATTERN = Pattern.compile("<(\\d{2}):(\\d{2})\\.(\\d{2,3})>([^<]*)")
+    private val WORD_ANGLE_PATTERN = Pattern.compile("<(\\d{2}):(\\d{2})\\.(\\d{2,3})>([^<]*)")
+    private val WORD_PAREN_PATTERN = Pattern.compile("\\((\\d{2}):(\\d{2})\\.(\\d{2,3})\\)([^\\)]*)")
+    private val WORD_OFFSET_PATTERN = Pattern.compile("<(\\d+)>(.[^<]*)")
 
     fun parse(lrcContent: String): ParsedLyrics {
         if (lrcContent.isBlank()) return ParsedLyrics()
 
-        val lyricLines = mutableListOf<LyricLine>()
+        val rawLines = mutableListOf<RawLine>()
         var isWordSynced = false
 
-        lrcContent.lines().forEach { line ->
-            val matcher = LINE_TIMESTAMP_PATTERN.matcher(line.trim())
+        lrcContent.lines().forEach { rawLine ->
+            val matcher = LINE_TIMESTAMP_PATTERN.matcher(rawLine.trim())
             if (matcher.matches()) {
                 val min = matcher.group(1)?.toLongOrNull() ?: 0L
                 val sec = matcher.group(2)?.toLongOrNull() ?: 0L
@@ -23,50 +25,106 @@ object LrcParser {
                 val lineStartMs = (min * 60 * 1000) + (sec * 1000) + ms
 
                 val remainingText = matcher.group(4) ?: ""
-
-                // Check for word-by-word timestamps <mm:ss.xx>Word
-                val wordMatcher = WORD_TIMESTAMP_PATTERN.matcher(remainingText)
-                val wordTokens = mutableListOf<WordToken>()
-
-                var cleanLineContent = StringBuilder()
-
-                while (wordMatcher.find()) {
-                    isWordSynced = true
-                    val wMin = wordMatcher.group(1)?.toLongOrNull() ?: 0L
-                    val wSec = wordMatcher.group(2)?.toLongOrNull() ?: 0L
-                    val wFrac = wordMatcher.group(3) ?: "0"
-                    val wStartMs = (wMin * 60 * 1000) + (wSec * 1000) + parseFractionalMs(wFrac)
-                    val wordText = wordMatcher.group(4) ?: ""
-
-                    cleanLineContent.append(wordText)
-                    wordTokens.add(
-                        WordToken(
-                            word = wordText,
-                            startMs = wStartMs,
-                            endMs = wStartMs + 500L
-                        )
-                    )
-                }
-
-                val finalContent = if (wordTokens.isNotEmpty()) {
-                    cleanLineContent.toString()
-                } else {
-                    remainingText.trim()
-                }
-
-                lyricLines.add(
-                    LyricLine(
-                        startMs = lineStartMs,
-                        content = finalContent,
-                        wordTokens = wordTokens
-                    )
-                )
+                rawLines.add(RawLine(lineStartMs, remainingText))
             }
         }
 
-        val sortedLines = lyricLines.sortedBy { it.startMs }
+        val sortedRaw = rawLines.sortedBy { it.startMs }
+        val parsedLines = mutableListOf<LyricLine>()
+
+        for (i in sortedRaw.indices) {
+            val currentRaw = sortedRaw[i]
+            val lineStartMs = currentRaw.startMs
+            val nextLineStartMs = if (i < sortedRaw.size - 1) sortedRaw[i + 1].startMs else lineStartMs + 4000L
+            val lineDuration = (nextLineStartMs - lineStartMs).coerceAtLeast(1000L)
+
+            val text = currentRaw.text
+            val wordTokens = mutableListOf<WordToken>()
+            var cleanContent = ""
+
+            // Check pattern 1: <mm:ss.xx>Word
+            val angleMatcher = WORD_ANGLE_PATTERN.matcher(text)
+            if (angleMatcher.find()) {
+                isWordSynced = true
+                angleMatcher.reset()
+                val sb = StringBuilder()
+                while (angleMatcher.find()) {
+                    val wMin = angleMatcher.group(1)?.toLongOrNull() ?: 0L
+                    val wSec = angleMatcher.group(2)?.toLongOrNull() ?: 0L
+                    val wFrac = angleMatcher.group(3) ?: "0"
+                    val wStartMs = (wMin * 60 * 1000) + (wSec * 1000) + parseFractionalMs(wFrac)
+                    val wordText = angleMatcher.group(4) ?: ""
+                    sb.append(wordText)
+                    wordTokens.add(WordToken(word = wordText, startMs = wStartMs, endMs = wStartMs + 400L))
+                }
+                cleanContent = sb.toString()
+            } else {
+                // Check pattern 2: (mm:ss.xx)Word
+                val parenMatcher = WORD_PAREN_PATTERN.matcher(text)
+                if (parenMatcher.find()) {
+                    isWordSynced = true
+                    parenMatcher.reset()
+                    val sb = StringBuilder()
+                    while (parenMatcher.find()) {
+                        val wMin = parenMatcher.group(1)?.toLongOrNull() ?: 0L
+                        val wSec = parenMatcher.group(2)?.toLongOrNull() ?: 0L
+                        val wFrac = parenMatcher.group(3) ?: "0"
+                        val wStartMs = (wMin * 60 * 1000) + (wSec * 1000) + parseFractionalMs(wFrac)
+                        val wordText = parenMatcher.group(4) ?: ""
+                        sb.append(wordText)
+                        wordTokens.add(WordToken(word = wordText, startMs = wStartMs, endMs = wStartMs + 400L))
+                    }
+                    cleanContent = sb.toString()
+                } else {
+                    // Check pattern 3: <ms_offset>Word
+                    val offsetMatcher = WORD_OFFSET_PATTERN.matcher(text)
+                    if (offsetMatcher.find()) {
+                        isWordSynced = true
+                        offsetMatcher.reset()
+                        val sb = StringBuilder()
+                        while (offsetMatcher.find()) {
+                            val offsetMs = offsetMatcher.group(1)?.toLongOrNull() ?: 0L
+                            val wordText = offsetMatcher.group(2) ?: ""
+                            val wStartMs = lineStartMs + offsetMs
+                            sb.append(wordText)
+                            wordTokens.add(WordToken(word = wordText, startMs = wStartMs, endMs = wStartMs + 400L))
+                        }
+                        cleanContent = sb.toString()
+                    }
+                }
+            }
+
+            if (wordTokens.isEmpty()) {
+                cleanContent = text.trim()
+                val words = cleanContent.split("\\s+".toRegex()).filter { it.isNotBlank() }
+                if (words.isNotEmpty()) {
+                    val timePerWord = lineDuration / words.size
+                    words.forEachIndexed { wordIdx, wordStr ->
+                        val wStartMs = lineStartMs + (wordIdx * timePerWord)
+                        val wEndMs = wStartMs + timePerWord
+                        wordTokens.add(WordToken(word = wordStr, startMs = wStartMs, endMs = wEndMs))
+                    }
+                }
+            } else {
+                // Adjust word endMs based on next word startMs
+                for (wIdx in 0 until wordTokens.size - 1) {
+                    val currentWord = wordTokens[wIdx]
+                    val nextWord = wordTokens[wIdx + 1]
+                    wordTokens[wIdx] = currentWord.copy(endMs = nextWord.startMs)
+                }
+            }
+
+            parsedLines.add(
+                LyricLine(
+                    startMs = lineStartMs,
+                    content = cleanContent,
+                    wordTokens = wordTokens
+                )
+            )
+        }
+
         return ParsedLyrics(
-            lines = sortedLines,
+            lines = parsedLines,
             isEnhancedWordSynced = isWordSynced,
             rawContent = lrcContent
         )
@@ -79,4 +137,6 @@ object LrcParser {
             else -> fracStr.toLongOrNull() ?: 0L
         }
     }
+
+    private data class RawLine(val startMs: Long, val text: String)
 }

@@ -1,25 +1,30 @@
 package com.auraplayer.app.ui
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,21 +41,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.auraplayer.app.lyrics.LyricLine
 import com.auraplayer.app.lyrics.ParsedLyrics
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LyricCanvas(
     lyrics: ParsedLyrics,
     currentPositionProvider: () -> Long,
     manualOffsetMs: Long,
     onOffsetChange: (Long) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    isLoading: Boolean = false,
+    trackTitle: String = ""
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val listState = rememberLazyListState()
@@ -84,7 +92,7 @@ fun LyricCanvas(
                 .padding(horizontal = 24.dp, vertical = 24.dp)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Pixel Expressive Header
+                // Top Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -101,10 +109,11 @@ fun LyricCanvas(
                             letterSpacing = 2.5.sp
                         )
                         Text(
-                            text = "Live Canvas",
+                            text = if (trackTitle.isNotBlank()) trackTitle else "Live Canvas",
                             color = colorScheme.onBackground,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
                         )
                     }
 
@@ -126,7 +135,7 @@ fun LyricCanvas(
                     }
                 }
 
-                // Pixel Manual Offset Adjustment Card
+                // Manual Offset Slider
                 if (showOffsetSlider) {
                     Surface(
                         color = colorScheme.surfaceContainerHigh,
@@ -170,8 +179,27 @@ fun LyricCanvas(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Lyric Scroll List
-                if (lyrics.lines.isEmpty()) {
+                // Content: Loading / Empty / Live Syllable Lyrics
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(
+                                color = colorScheme.primary,
+                                modifier = Modifier.size(44.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Searching synced lyrics...",
+                                color = colorScheme.onSurfaceVariant,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                } else if (lyrics.lines.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -194,12 +222,12 @@ fun LyricCanvas(
                             val alpha by animateFloatAsState(
                                 targetValue = if (isActive) 1.0f else 0.35f,
                                 animationSpec = tween(durationMillis = 300),
-                                label = "pixelLyricAlpha"
+                                label = "lyricAlpha"
                             )
                             val scale by animateFloatAsState(
-                                targetValue = if (isActive) 1.06f else 0.98f,
+                                targetValue = if (isActive) 1.05f else 0.98f,
                                 animationSpec = tween(durationMillis = 300),
-                                label = "pixelLyricScale"
+                                label = "lyricScale"
                             )
 
                             Box(
@@ -211,18 +239,59 @@ fun LyricCanvas(
                                         this.scaleY = scale
                                     }
                             ) {
-                                Text(
-                                    text = line.content,
-                                    color = if (isActive) colorScheme.onBackground else colorScheme.onSurfaceVariant,
-                                    fontSize = if (isActive) 24.sp else 18.sp,
-                                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                                    textAlign = TextAlign.Start,
-                                    modifier = Modifier.fillMaxWidth()
+                                WordSyncedLine(
+                                    line = line,
+                                    currentPositionMs = currentPositionMs,
+                                    isActive = isActive,
+                                    colorScheme = colorScheme
                                 )
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun WordSyncedLine(
+    line: LyricLine,
+    currentPositionMs: Long,
+    isActive: Boolean,
+    colorScheme: ColorScheme
+) {
+    if (!isActive || line.wordTokens.isEmpty()) {
+        Text(
+            text = line.content,
+            color = if (isActive) colorScheme.onBackground else colorScheme.onSurfaceVariant,
+            fontSize = if (isActive) 24.sp else 18.sp,
+            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+            textAlign = TextAlign.Start,
+            modifier = Modifier.fillMaxWidth()
+        )
+    } else {
+        FlowRow(
+            horizontalArrangement = Arrangement.Start,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            line.wordTokens.forEach { token ->
+                val isWordActive = currentPositionMs >= token.startMs
+                val animatedColor by animateColorAsState(
+                    targetValue = if (isWordActive) colorScheme.primary else colorScheme.onBackground.copy(alpha = 0.6f),
+                    animationSpec = tween(150),
+                    label = "wordColor"
+                )
+
+                Text(
+                    text = "${token.word} ",
+                    color = animatedColor,
+                    fontSize = 24.sp,
+                    fontWeight = if (isWordActive) FontWeight.ExtraBold else FontWeight.Bold,
+                    modifier = Modifier.padding(end = 2.dp)
+                )
             }
         }
     }
