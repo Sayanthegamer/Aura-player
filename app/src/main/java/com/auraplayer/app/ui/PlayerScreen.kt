@@ -1,6 +1,5 @@
 package com.auraplayer.app.ui
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -30,7 +29,6 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -55,13 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.auraplayer.app.playback.PlayerUiState
 
-val DarkBg = Color(0xFF0F0E17)
-val CardBg = Color(0xFF1E1C2A)
-val AccentOrange = Color(0xFFFF8906)
-val AccentPink = Color(0xFFE53170)
-val TextMuted = Color(0xFFA7A9BE)
-val ChipBg = Color(0xFF2A283E)
-
 @Composable
 fun PlayerScreen(
     uiState: PlayerUiState,
@@ -72,10 +63,11 @@ fun PlayerScreen(
     onAlbumArtTap: () -> Unit = {}
 ) {
     val track = uiState.currentTrack
+    val colorScheme = MaterialTheme.colorScheme
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = DarkBg
+        color = colorScheme.background
     ) {
         Box(
             modifier = Modifier
@@ -83,9 +75,9 @@ fun PlayerScreen(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF1A1829),
-                            DarkBg,
-                            Color(0xFF09080E)
+                            colorScheme.surfaceContainerLow,
+                            colorScheme.background,
+                            colorScheme.surfaceContainerLowest
                         )
                     )
                 )
@@ -93,52 +85,53 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                    .padding(horizontal = 24.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Top Navigation Bar
+                // Pixel Expressive Top Bar
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp),
+                        .padding(top = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
                         Text(
                             text = "AURA PLAYER",
-                            color = AccentOrange,
-                            fontSize = 12.sp,
+                            color = colorScheme.primary,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp
+                            letterSpacing = 2.5.sp
                         )
                         Text(
                             text = "Now Playing",
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            color = colorScheme.onBackground,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
 
+                    // Pixel Audio Routing Pill Badge
                     Surface(
-                        color = ChipBg,
-                        shape = RoundedCornerShape(20.dp)
+                        color = colorScheme.surfaceContainerHigh,
+                        shape = CircleShape
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Default.GraphicEq,
                                 contentDescription = "Audio Output",
-                                tint = AccentOrange,
+                                tint = colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Hi-Res Audio",
-                                color = Color.White,
+                                text = "Pixel Audio Engine",
+                                color = colorScheme.onSurface,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -148,23 +141,23 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Album Art Canvas Card
+                // Pixel Expressive Album Art Card
                 val albumScale by animateFloatAsState(
-                    targetValue = if (uiState.isPlaying) 1.0f else 0.94f,
-                    animationSpec = tween(durationMillis = 400),
-                    label = "albumScale"
+                    targetValue = if (uiState.isPlaying) 1.0f else 0.93f,
+                    animationSpec = tween(durationMillis = 350),
+                    label = "pixelAlbumScale"
                 )
 
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth(0.85f)
+                        .fillMaxWidth(0.88f)
                         .aspectRatio(1f)
                         .scale(albumScale)
-                        .clip(RoundedCornerShape(28.dp))
+                        .clip(RoundedCornerShape(36.dp))
                         .clickable { onAlbumArtTap() },
-                    shape = RoundedCornerShape(28.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                    shape = RoundedCornerShape(36.dp),
+                    colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceContainerHigh),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -172,8 +165,8 @@ fun PlayerScreen(
                             .background(
                                 Brush.linearGradient(
                                     colors = listOf(
-                                        Color(0xFF2E2B44),
-                                        Color(0xFF151421)
+                                        colorScheme.primaryContainer,
+                                        colorScheme.surfaceContainerHighest
                                     )
                                 )
                             ),
@@ -181,23 +174,23 @@ fun PlayerScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.MusicNote,
-                            contentDescription = "Album Artwork Placeholder",
-                            tint = AccentPink,
-                            modifier = Modifier.size(96.dp)
+                            contentDescription = "Album Artwork Canvas",
+                            tint = colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(104.dp)
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Track Metadata Info
+                // Metadata Title, Artist, and Badges
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = track?.title ?: "Aura Soundscape",
-                        color = Color.White,
+                        color = colorScheme.onBackground,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
@@ -207,46 +200,46 @@ fun PlayerScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = track?.artist ?: "Aura Audio Engine",
-                        color = TextMuted,
-                        fontSize = 16.sp,
+                        color = colorScheme.onSurfaceVariant,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                    // Audio Quality Chip & ReplayGain Badge
+                    // Badges: Audio Chip + ReplayGain
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            color = ChipBg,
-                            shape = RoundedCornerShape(8.dp)
+                            color = colorScheme.secondaryContainer,
+                            shape = CircleShape
                         ) {
                             Text(
                                 text = "${track?.codec ?: "FLAC"} • ${track?.bitDepth ?: 24}-bit/${(track?.sampleRate ?: 96000) / 1000}kHz",
-                                color = AccentOrange,
+                                color = colorScheme.onSecondaryContainer,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Surface(
-                            color = Color(0xFF251A2E),
-                            shape = RoundedCornerShape(8.dp)
+                            color = colorScheme.tertiaryContainer,
+                            shape = CircleShape
                         ) {
                             Text(
                                 text = "RG -2.1dB",
-                                color = AccentPink,
+                                color = colorScheme.onTertiaryContainer,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             )
                         }
                     }
@@ -254,7 +247,7 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Progress Bar & Timestamps
+                // Pixel Expressive Slider & Timestamps
                 Column(modifier = Modifier.fillMaxWidth()) {
                     val currentPosMs = uiState.currentPositionMs
                     val totalDurationMs = if (uiState.durationMs > 0) uiState.durationMs else 180000L
@@ -266,9 +259,9 @@ fun PlayerScreen(
                             onSeek((fraction * totalDurationMs).toLong())
                         },
                         colors = SliderDefaults.colors(
-                            thumbColor = AccentOrange,
-                            activeTrackColor = AccentOrange,
-                            inactiveTrackColor = ChipBg
+                            thumbColor = colorScheme.primary,
+                            activeTrackColor = colorScheme.primary,
+                            inactiveTrackColor = colorScheme.surfaceContainerHighest
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -276,18 +269,18 @@ fun PlayerScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 4.dp),
+                            .padding(horizontal = 6.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
                             text = formatTimeMs(currentPosMs),
-                            color = TextMuted,
+                            color = colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
                             text = formatTimeMs(totalDurationMs),
-                            color = TextMuted,
+                            color = colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -296,71 +289,75 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Media Playback Controls
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+                // Pixel Expressive Floating Control Bar Capsule
+                Surface(
+                    color = colorScheme.surfaceContainerHigh,
+                    shape = CircleShape,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Default.Shuffle,
-                            contentDescription = "Shuffle",
-                            tint = TextMuted
-                        )
-                    }
-
-                    IconButton(onClick = onPrevTrack) {
-                        Icon(
-                            imageVector = Icons.Default.SkipPrevious,
-                            contentDescription = "Previous Track",
-                            tint = Color.White,
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-
-                    // Main Play/Pause FAB
-                    Surface(
-                        onClick = onPlayPauseToggle,
-                        shape = CircleShape,
-                        color = Color.Unspecified,
-                        shadowElevation = 12.dp
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .background(
-                                    Brush.linearGradient(
-                                        colors = listOf(AccentOrange, AccentPink)
-                                    ),
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        IconButton(onClick = { }) {
                             Icon(
-                                imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (uiState.isPlaying) "Pause" else "Play",
-                                tint = Color.White,
-                                modifier = Modifier.size(40.dp)
+                                imageVector = Icons.Default.Shuffle,
+                                contentDescription = "Shuffle",
+                                tint = colorScheme.onSurfaceVariant
                             )
                         }
-                    }
 
-                    IconButton(onClick = onNextTrack) {
-                        Icon(
-                            imageVector = Icons.Default.SkipNext,
-                            contentDescription = "Next Track",
-                            tint = Color.White,
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
+                        IconButton(onClick = onPrevTrack) {
+                            Icon(
+                                imageVector = Icons.Default.SkipPrevious,
+                                contentDescription = "Previous Track",
+                                tint = colorScheme.onSurface,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
 
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Default.Repeat,
-                            contentDescription = "Repeat",
-                            tint = TextMuted
-                        )
+                        // Pixel Expressive Rounded Squircle Play/Pause FAB
+                        Surface(
+                            onClick = onPlayPauseToggle,
+                            shape = RoundedCornerShape(24.dp),
+                            color = colorScheme.primaryContainer,
+                            shadowElevation = 4.dp
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(68.dp)
+                                    .padding(4.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    contentDescription = if (uiState.isPlaying) "Pause" else "Play",
+                                    tint = colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                            }
+                        }
+
+                        IconButton(onClick = onNextTrack) {
+                            Icon(
+                                imageVector = Icons.Default.SkipNext,
+                                contentDescription = "Next Track",
+                                tint = colorScheme.onSurface,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+
+                        IconButton(onClick = onAlbumArtTap) {
+                            Icon(
+                                imageVector = Icons.Default.Lyrics,
+                                contentDescription = "Synced Lyrics",
+                                tint = colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
