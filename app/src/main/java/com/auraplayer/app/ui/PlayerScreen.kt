@@ -1,5 +1,6 @@
 package com.auraplayer.app.ui
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -16,18 +17,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,16 +30,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,7 +42,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -82,35 +66,147 @@ fun PlayerScreen(
     onNextTrack: () -> Unit,
     onPrevTrack: () -> Unit,
     onAlbumArtTap: () -> Unit,
+    onOpenAudioDsp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val track = uiState.currentTrack
-    val colorScheme = MaterialTheme.colorScheme
 
-    val primaryAccent = colorScheme.primary
-    val secondaryAccent = colorScheme.secondary
-    val surfaceContainer = colorScheme.surfaceContainerHigh
-    val dominantBg = colorScheme.background
-    val onSurface = colorScheme.onBackground
-    val onSurfaceVariant = colorScheme.onSurfaceVariant
+    // Extract dynamic colors from album artwork using Palette
+    var dominantColor by remember { mutableStateOf(Color(0xFF1E1B2E)) }
+    var accentColor by remember { mutableStateOf(Color(0xFFD0BCFF)) }
+    var secondaryColor by remember { mutableStateOf(Color(0xFF381E72)) }
+
+    LaunchedEffect(track?.artworkUri) {
+        if (!track?.artworkUri.isNullOrEmpty()) {
+            val request = ImageRequest.Builder(context)
+                .data(track?.artworkUri)
+                .allowHardware(false)
+                .build()
+            val result = (coil.ImageLoader(context).execute(request) as? coil.request.SuccessResult)?.drawable
+            if (result is android.graphics.drawable.BitmapDrawable) {
+                val bitmap = result.bitmap
+                androidx.palette.graphics.Palette.from(bitmap).generate { palette ->
+                    palette?.let { p ->
+                        p.getDominantColor(android.graphics.Color.parseColor("#1E1B2E")).let {
+                            dominantColor = Color(it)
+                        }
+                        p.getVibrantColor(p.getLightVibrantColor(android.graphics.Color.parseColor("#D0BCFF"))).let {
+                            accentColor = Color(it)
+                        }
+                        p.getMutedColor(p.getDarkMutedColor(android.graphics.Color.parseColor("#381E72"))).let {
+                            secondaryColor = Color(it)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Animate color transitions smoothly when track changes
+    val animatedDominant by animateColorAsState(
+        targetValue = dominantColor,
+        animationSpec = tween(1000, easing = LinearEasing),
+        label = "animatedDominant"
+    )
+    val animatedAccent by animateColorAsState(
+        targetValue = accentColor,
+        animationSpec = tween(1000, easing = LinearEasing),
+        label = "animatedAccent"
+    )
+    val animatedSecondary by animateColorAsState(
+        targetValue = secondaryColor,
+        animationSpec = tween(1000, easing = LinearEasing),
+        label = "animatedSecondary"
+    )
+
+    // Continuous Brownian Motion Animation for super-blurred background orbs
+    val transition = rememberInfiniteTransition(label = "brownianMotion")
+    val rawAnim1 by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(14000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "brownian1"
+    )
+    val rawAnim2 by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(18000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "brownian2"
+    )
+
+    val primaryAccent = animatedAccent
+    val secondaryAccent = animatedSecondary
+    val surfaceContainer = animatedSecondary.copy(alpha = 0.45f)
+    val dominantBg = animatedDominant
+    val onSurface = Color.White
+    val onSurfaceVariant = Color.White.copy(alpha = 0.75f)
 
     Surface(
         modifier = modifier.fillMaxSize(),
         color = dominantBg
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Super Blurred Brownian Motion Gradient Blobs
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        renderEffect = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                            android.graphics.RenderEffect.createBlurEffect(
+                                130f, 130f,
+                                android.graphics.Shader.TileMode.MIRROR
+                            ).asComposeRenderEffect()
+                        } else null
+                    }
+            ) {
+                val canvasW = size.width
+                val canvasH = size.height
+
+                // Orb 1: Top-Left to Center Brownian Float
+                val orb1X = canvasW * (0.2f + 0.5f * rawAnim1)
+                val orb1Y = canvasH * (0.15f + 0.4f * rawAnim2)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(animatedAccent.copy(alpha = 0.7f), Color.Transparent),
+                        center = Offset(orb1X, orb1Y),
+                        radius = canvasW * 0.8f
+                    ),
+                    center = Offset(orb1X, orb1Y),
+                    radius = canvasW * 0.8f
+                )
+
+                // Orb 2: Bottom-Right to Center Brownian Float
+                val orb2X = canvasW * (0.8f - 0.5f * rawAnim2)
+                val orb2Y = canvasH * (0.75f - 0.4f * rawAnim1)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(animatedSecondary.copy(alpha = 0.75f), Color.Transparent),
+                        center = Offset(orb2X, orb2Y),
+                        radius = canvasW * 0.9f
+                    ),
+                    center = Offset(orb2X, orb2Y),
+                    radius = canvasW * 0.9f
+                )
+
+                // Solid subtle vignette overlay for rich contrast
+                drawRect(
+                    brush = Brush.verticalGradient(
                         colors = listOf(
-                            colorScheme.surfaceContainer.copy(alpha = 0.8f),
-                            dominantBg,
-                            dominantBg
+                            Color.Black.copy(alpha = 0.35f),
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.65f)
                         )
                     )
                 )
-        ) {
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -151,10 +247,10 @@ fun PlayerScreen(
                         )
                     }
 
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = onOpenAudioDsp) {
                         Icon(
                             imageVector = Icons.Default.GraphicEq,
-                            contentDescription = "Audio Engine FX",
+                            contentDescription = "Audio Engine FX & EQ",
                             tint = primaryAccent
                         )
                     }
@@ -185,7 +281,7 @@ fun PlayerScreen(
                                 .background(
                                     Brush.radialGradient(
                                         colors = listOf(
-                                            colorScheme.surfaceContainerLowest,
+                                            animatedSecondary.copy(alpha = 0.5f),
                                             surfaceContainer
                                         )
                                     )
@@ -381,7 +477,7 @@ fun PlayerScreen(
                                 Icon(
                                     imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                     contentDescription = if (uiState.isPlaying) "Pause" else "Play",
-                                    tint = colorScheme.onPrimary,
+                                    tint = Color.Black,
                                     modifier = Modifier.size(38.dp)
                                 )
                             }
