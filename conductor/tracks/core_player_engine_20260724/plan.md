@@ -2,7 +2,7 @@
 
 ## Phase 1.1: Project Infrastructure & Base Android Architecture
 - [x] Task: Scaffold base Android application structure (`com.auraplayer.app`) with Gradle Kotlin DSL (`build.gradle.kts`, `settings.gradle.kts`, `AndroidManifest.xml`). (bb27681)
-- [ ] Task: Configure Android 15 foreground service declarations (`android:foregroundServiceType="mediaPlayback"`), `POST_NOTIFICATIONS` runtime permissions, Media3, Jetpack Compose Material 3, Room, jaudiotagger, and Ktor/OkHttp dependencies.
+- [x] Task: Configure Android 15 foreground service declarations (`android:foregroundServiceType="mediaPlayback"`), `POST_NOTIFICATIONS` runtime permissions, Media3, Jetpack Compose Material 3, Room, jaudiotagger, and Ktor/OkHttp dependencies. (a570549)
 - [ ] Task: Verify base project compilation with `./gradlew assembleDebug`.
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
