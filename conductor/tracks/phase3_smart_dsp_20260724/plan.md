@@ -1,19 +1,19 @@
 # Implementation Plan: Phase 3 - Smart Features & Advanced Audio DSP
 
 ## Phase 1: 16-Band Parametric Equalizer & Native Audio DSP Sheet
-- [ ] Task: Equalizer & DSP Core Engine
-  - [ ] Implement `AudioDspManager` utilizing `android.media.audiofx.DynamicsProcessing` attached to `ExoPlayer.audioSessionId`.
-  - [ ] Implement 16 parametric band configuration (gain, center frequency, Q-factor) with default flat presets and standard profiles (Rock, Jazz, Bass Boost).
-  - [ ] Implement low-shelf (Bass Boost), high-shelf (Treble), and peak limiter controls.
-  - [ ] Implement try-catch fallback to standard Android 5-band `Equalizer` for low-end OEM devices unsupported by `DynamicsProcessing`.
-  - [ ] Manage hardware offload state switching when EQ is enabled vs disabled.
-  - [ ] Persist EQ state & band gains in `DataStore`.
-- [ ] Task: Audio & DSP Bottom Sheet UI
-  - [ ] Create Material 3 `AudioDspBottomSheet` with tabbed/scrolling band sliders, preset dropdown, and bypass switch.
-  - [ ] Connect sheet UI to `AudioDspManager` state via StateFlow.
-- [ ] Task: Unit & Manual Tests for Audio DSP
-  - [ ] Write `AudioDspManagerTest` for band gain calculation and preset loading logic.
-- [ ] Task: Phase 1 Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Equalizer & DSP Core Engine
+  - [x] Implement `AudioDspManager` utilizing `android.media.audiofx.DynamicsProcessing` attached to `ExoPlayer.audioSessionId`.
+  - [x] Implement 16 parametric band configuration (gain, center frequency, Q-factor) with default flat presets and standard profiles (Rock, Jazz, Bass Boost).
+  - [x] Implement low-shelf (Bass Boost), high-shelf (Treble), and peak limiter controls.
+  - [x] Implement try-catch fallback to standard Android 5-band `Equalizer` for low-end OEM devices unsupported by `DynamicsProcessing`.
+  - [x] Manage hardware offload state switching when EQ is enabled vs disabled.
+  - [x] Persist EQ state & band gains in `DataStore`.
+- [x] Task: Audio & DSP Bottom Sheet UI
+  - [x] Create Material 3 `AudioDspBottomSheet` with tabbed/scrolling band sliders, preset dropdown, and bypass switch.
+  - [x] Connect sheet UI to `AudioDspManager` state via StateFlow.
+- [x] Task: Unit & Manual Tests for Audio DSP
+  - [x] Write `AudioDspManagerTest` for band gain calculation and preset loading logic.
+- [x] Task: Phase 1 Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: Offline Intelligent Autoplay Algorithm
 - [ ] Task: Room Database Scoring Extensions
