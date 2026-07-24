@@ -68,6 +68,9 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    // WorkManager
+    implementation(libs.work.runtime.ktx)
+
     // Ktor Client & Serialization
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)

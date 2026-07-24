@@ -4,15 +4,18 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.auraplayer.app.scrobble.ScrobbleQueueDao
+import com.auraplayer.app.scrobble.ScrobbleQueueEntity
 
 @Database(
     entities = [
         LyricEntity::class,
         TrackEntity::class,
         AlbumEntity::class,
-        ArtistEntity::class
+        ArtistEntity::class,
+        ScrobbleQueueEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AuraDatabase : RoomDatabase() {
@@ -21,6 +24,7 @@ abstract class AuraDatabase : RoomDatabase() {
     abstract fun trackDao(): TrackDao
     abstract fun albumDao(): AlbumDao
     abstract fun artistDao(): ArtistDao
+    abstract fun scrobbleQueueDao(): ScrobbleQueueDao
 
     companion object {
         @Volatile

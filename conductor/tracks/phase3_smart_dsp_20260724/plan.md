@@ -29,15 +29,15 @@
 - [x] Task: Phase 2 Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 3: Background Scrobbling Infrastructure
-- [ ] Task: Scrobble Queue Persistence & Threshold Monitor
-  - [ ] Create Room `ScrobbleQueueEntity` (`artist`, `track`, `album`, `timestamp`, `duration`, `status`).
-  - [ ] Add playback listener in `PlayerManager` tracking 50% / 240s scrobble validation criteria.
-- [ ] Task: WorkManager Batch Sync Engine
-  - [ ] Implement `ScrobbleWorker` with network constraint (`NetworkType.CONNECTED`), battery constraint (`setRequiresBatteryNotLow(true)`), and exponential backoff retry.
-  - [ ] Create `ScrobbleProvider` interface with API implementations for Last.fm (Session Key Auth), ListenBrainz (Token Auth), and Open Scrobbler.
-  - [ ] Batch send pending Room entries on network connection.
-- [ ] Task: Settings & Auth UI
-  - [ ] Implement Settings section for `"Scrobbling & Statistics"` with service login/token prompts and status indicators.
-- [ ] Task: Unit Tests for Scrobbler
-  - [ ] Write `ScrobbleThresholdTest` and `ScrobbleWorkerTest` using mock network client.
-- [ ] Task: Phase 3 Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Scrobble Queue Persistence & Threshold Monitor
+  - [x] Create Room `ScrobbleQueueEntity` (`artist`, `track`, `album`, `timestamp`, `duration`, `status`).
+  - [x] Add playback listener in `PlayerManager` tracking 50% / 240s scrobble validation criteria.
+- [x] Task: WorkManager Batch Sync Engine
+  - [x] Implement `ScrobbleWorker` with network constraint (`NetworkType.CONNECTED`), battery constraint (`setRequiresBatteryNotLow(true)`), and exponential backoff retry.
+  - [x] Create `ScrobbleProvider` interface with API implementations for Last.fm (Session Key Auth), ListenBrainz (Token Auth), and Open Scrobbler.
+  - [x] Batch send pending Room entries on network connection.
+- [x] Task: Settings & Auth UI
+  - [x] Implement Settings section for `"Scrobbling & Statistics"` with service login/token prompts and status indicators.
+- [x] Task: Unit Tests for Scrobbler
+  - [x] Write `ScrobbleThresholdTest` and `ScrobbleWorkerTest` using mock network client.
+- [x] Task: Phase 3 Verification & Checkpoint (Refer to workflow.md)
