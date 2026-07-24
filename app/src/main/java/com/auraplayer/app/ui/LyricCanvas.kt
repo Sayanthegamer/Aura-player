@@ -3,7 +3,6 @@ package com.auraplayer.app.ui
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -74,14 +73,15 @@ fun LyricCanvas(
     val listState = rememberLazyListState()
     var showOffsetSlider by remember { mutableStateOf(false) }
 
-    val currentPositionMs = currentPositionProvider() + manualOffsetMs
-
-    val activeIndex by remember(currentPositionMs, lyrics.lines) {
+    val activeIndex by remember(lyrics.lines, manualOffsetMs) {
         derivedStateOf {
-            val idx = lyrics.lines.indexOfLast { it.startMs <= currentPositionMs }
+            val pos = currentPositionProvider() + manualOffsetMs
+            val idx = lyrics.lines.indexOfLast { it.startMs <= pos }
             if (idx >= 0) idx else 0
         }
     }
+
+    val currentPositionMs = currentPositionProvider() + manualOffsetMs
 
     // Spring auto-scroll centering to 35% viewport height
     LaunchedEffect(activeIndex) {
@@ -309,17 +309,34 @@ private fun AppleMusicWordLine(
     colorScheme: ColorScheme
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        if (!isActive || line.wordTokens.isEmpty()) {
+        if (line.wordTokens.isEmpty()) {
+            // Line-Synced Standard LRC Lyric
+            val lineScale by animateFloatAsState(
+                targetValue = if (isActive) 1.05f else 1.0f,
+                animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioLowBouncy),
+                label = "lineScale"
+            )
+            val shadowColor = colorScheme.primary.copy(alpha = if (isActive) 0.85f else 0f)
+
             Text(
                 text = line.content,
-                color = if (isActive) Color.White else colorScheme.onSurfaceVariant,
-                fontSize = if (isActive) 30.sp else 22.sp,
-                fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.SemiBold,
-                lineHeight = if (isActive) 38.sp else 30.sp,
+                color = if (isActive) Color.White else colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                fontSize = 28.sp,
+                fontWeight = if (isActive) FontWeight.Black else FontWeight.Bold,
+                lineHeight = 36.sp,
                 textAlign = TextAlign.Start,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        this.scaleX = lineScale
+                        this.scaleY = lineScale
+                        this.shadowElevation = if (isActive) 14.dp.toPx() else 0f
+                        this.spotShadowColor = shadowColor
+                        this.ambientShadowColor = shadowColor
+                    }
             )
         } else {
+            // Syllable / Word-Synced Lyric
             FlowRow(
                 horizontalArrangement = Arrangement.Start,
                 verticalArrangement = Arrangement.Center,
@@ -358,9 +375,9 @@ private fun AppleMusicWordLine(
                     Text(
                         text = token.word,
                         color = wordColor,
-                        fontSize = 30.sp,
+                        fontSize = 28.sp,
                         fontWeight = if (isCurrentWord || isPastWord) FontWeight.Black else FontWeight.Bold,
-                        lineHeight = 38.sp,
+                        lineHeight = 36.sp,
                         modifier = Modifier
                             .graphicsLayer {
                                 this.scaleX = wordScale
@@ -369,7 +386,7 @@ private fun AppleMusicWordLine(
                                 this.spotShadowColor = shadowColor
                                 this.ambientShadowColor = shadowColor
                             }
-                            .padding(end = if (isCurrentWord) 5.dp else 2.dp)
+                            .padding(end = if (isCurrentWord) 6.dp else 3.dp)
                     )
                 }
             }
@@ -382,7 +399,7 @@ private fun AppleMusicWordLine(
             Text(
                 text = subText,
                 color = if (isActive) colorScheme.primary else colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                fontSize = if (isActive) 18.sp else 14.sp,
+                fontSize = 17.sp,
                 fontWeight = FontWeight.Medium,
                 fontStyle = FontStyle.Italic,
                 modifier = Modifier.fillMaxWidth()
