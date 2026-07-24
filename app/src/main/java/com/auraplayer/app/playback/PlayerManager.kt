@@ -79,27 +79,48 @@ class PlayerManager(
                 val gainDb = trackEntity?.replayGainTrackGain
                 val peak = trackEntity?.replayGainTrackPeak
 
+                val filePath = trackEntity?.filePath ?: ""
                 val artworkUri = mediaItem?.mediaMetadata?.artworkUri?.toString() ?: trackEntity?.albumArtUri
 
                 applyReplayGain(gainDb, peak)
 
+                val initialTrack = TrackMetadata(
+                    id = mediaId ?: "default",
+                    title = title,
+                    artist = artist,
+                    album = album,
+                    durationMs = if (player.duration != C.TIME_UNSET) player.duration else (trackEntity?.durationMs ?: 0L),
+                    artworkUri = artworkUri,
+                    filePath = filePath,
+                    codec = codec,
+                    sampleRate = sampleRate,
+                    bitDepth = bitDepth,
+                    bitrateKbps = bitrateKbps,
+                    replayGainDb = gainDb,
+                    replayGainPeak = peak
+                )
+
                 _uiState.update {
-                    it.copy(
-                        currentTrack = TrackMetadata(
-                            id = mediaId ?: "default",
-                            title = title,
-                            artist = artist,
-                            album = album,
-                            durationMs = if (player.duration != C.TIME_UNSET) player.duration else (trackEntity?.durationMs ?: 0L),
-                            artworkUri = artworkUri,
-                            codec = codec,
-                            sampleRate = sampleRate,
-                            bitDepth = bitDepth,
-                            bitrateKbps = bitrateKbps,
-                            replayGainDb = gainDb,
-                            replayGainPeak = peak
-                        )
-                    )
+                    it.copy(currentTrack = initialTrack)
+                }
+
+                if (filePath.isNotBlank()) {
+                    scope.launch(Dispatchers.IO) {
+                        val file = java.io.File(filePath)
+                        if (file.exists()) {
+                            val embeddedLyrics = try {
+                                MetadataExtractor.extract(file).embeddedLyrics
+                            } catch (e: Exception) { null }
+
+                            _uiState.update { state ->
+                                state.currentTrack?.let { curr ->
+                                    if (curr.id == (mediaId ?: "default")) {
+                                        state.copy(currentTrack = curr.copy(embeddedLyrics = embeddedLyrics))
+                                    } else state
+                                } ?: state
+                            }
+                        }
+                    }
                 }
             }
         })

@@ -7,6 +7,8 @@ data class TrackMetadata(
     val album: String = "Unknown Album",
     val durationMs: Long = 0L,
     val artworkUri: String? = null,
+    val filePath: String = "",
+    val embeddedLyrics: String? = null,
     val codec: String = "FLAC",
     val sampleRate: Int = 44100,
     val bitDepth: Int = 24,

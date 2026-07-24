@@ -90,13 +90,15 @@ class MainActivity : ComponentActivity() {
                 var manualOffsetMs by remember { mutableStateOf(0L) }
                 val coroutineScope = rememberCoroutineScope()
 
-                LaunchedEffect(uiState.currentTrack?.id) {
+                LaunchedEffect(uiState.currentTrack?.id, uiState.currentTrack?.embeddedLyrics) {
                     uiState.currentTrack?.let { track ->
                         isFetchingLyrics = true
                         sampleLyrics = lrclibRepository.getLyrics(
                             trackId = track.id,
                             title = track.title,
-                            artist = track.artist
+                            artist = track.artist,
+                            durationSeconds = (track.durationMs / 1000.0),
+                            embeddedLyrics = track.embeddedLyrics
                         )
                         isFetchingLyrics = false
                     }
