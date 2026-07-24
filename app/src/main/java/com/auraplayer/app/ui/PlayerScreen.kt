@@ -430,6 +430,15 @@ fun MaterialSquigglySeekBar(
         label = "phase"
     )
 
+    val animatedAmplitudeFactor by animateFloatAsState(
+        targetValue = if (isPlaying) 1.0f else 0.0f,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessLow,
+            dampingRatio = Spring.DampingRatioMediumBouncy
+        ),
+        label = "amplitudeCollapse"
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -454,7 +463,8 @@ fun MaterialSquigglySeekBar(
             val activeX = (progress * width).coerceIn(0f, width)
 
             val strokeWidthPx = 4.dp.toPx()
-            val amplitudePx = 5.dp.toPx()
+            val maxAmplitudePx = 5.dp.toPx()
+            val currentAmplitudePx = maxAmplitudePx * animatedAmplitudeFactor
             val wavelengthPx = 28.dp.toPx()
             val thumbRadiusPx = 7.5.dp.toPx()
 
@@ -468,8 +478,7 @@ fun MaterialSquigglySeekBar(
                 val step = 2.dp.toPx()
 
                 while (x <= activeEndX) {
-                    val currentPhase = if (isPlaying) phase else 0f
-                    val y = centerY + amplitudePx * kotlin.math.sin((x / wavelengthPx) * (2 * Math.PI) + currentPhase).toFloat()
+                    val y = centerY + currentAmplitudePx * kotlin.math.sin((x / wavelengthPx) * (2 * Math.PI) + phase).toFloat()
                     wavePath.lineTo(x, y)
                     x += step
                 }
