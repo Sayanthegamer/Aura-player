@@ -6,5 +6,5 @@
   *Link: [index.md](./archive/home_library_settings_20260724/index.md)*
 - [x] **Track: Blacklist Folder Feature**
   *Link: [index.md](./archive/blacklist_folders_20260724/index.md)*
-- [~] **Track: Phase 3 - Smart Features & Advanced Audio DSP**
+- [x] **Track: Phase 3 - Smart Features & Advanced Audio DSP**
   *Link: [index.md](./tracks/phase3_smart_dsp_20260724/index.md)*
