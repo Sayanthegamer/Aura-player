@@ -114,6 +114,27 @@ class PlayerManager(
         player.play()
     }
 
+    fun playTrackList(tracks: List<com.auraplayer.app.data.TrackEntity>, startIndex: Int = 0) {
+        if (tracks.isEmpty()) return
+        val mediaItems = tracks.map { track ->
+            MediaItem.Builder()
+                .setMediaId(track.id.toString())
+                .setUri(track.uriString)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(track.title)
+                        .setArtist(track.artistName)
+                        .setAlbumTitle(track.albumName)
+                        .setArtworkUri(track.albumArtUri?.let { android.net.Uri.parse(it) })
+                        .build()
+                )
+                .build()
+        }
+        player.setMediaItems(mediaItems, startIndex, 0L)
+        player.prepare()
+        player.play()
+    }
+
     fun togglePlayPause() {
         if (player.isPlaying) {
             player.pause()
