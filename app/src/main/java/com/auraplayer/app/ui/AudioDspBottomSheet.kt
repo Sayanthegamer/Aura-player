@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import com.auraplayer.app.audio.AudioDspState
 import com.auraplayer.app.audio.EqBand
 import com.auraplayer.app.audio.EqPreset
@@ -214,36 +216,59 @@ private fun BandSliderColumn(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(44.dp)
+        modifier = Modifier.width(48.dp)
     ) {
         // Gain value text
         val gainText = if (band.gainDb > 0) "+${String.format("%.1f", band.gainDb)}" else String.format("%.1f", band.gainDb)
         Text(
             text = gainText,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             color = if (band.gainDb != 0f) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Slider representation
-        Slider(
-            value = band.gainDb,
-            onValueChange = onGainChanged,
-            valueRange = band.minGainDb..band.maxGainDb,
+        // True Vertical Slider via graphics rotation & layout constraint swapping
+        Box(
             modifier = Modifier
-                .height(140.dp)
-        )
+                .height(160.dp)
+                .width(48.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Slider(
+                value = band.gainDb,
+                onValueChange = onGainChanged,
+                valueRange = band.minGainDb..band.maxGainDb,
+                modifier = Modifier
+                    .graphicsLayer {
+                        rotationZ = -90f
+                    }
+                    .layout { measurable, constraints ->
+                        // Swap width and height for vertical layout calculation
+                        val placeable = measurable.measure(
+                            constraints.copy(
+                                minWidth = constraints.minHeight,
+                                maxWidth = constraints.maxHeight,
+                                minHeight = constraints.minWidth,
+                                maxHeight = constraints.maxWidth
+                            )
+                        )
+                        layout(placeable.height, placeable.width) {
+                            placeable.place(-placeable.width / 2 + placeable.height / 2, -placeable.height / 2 + placeable.width / 2)
+                        }
+                    }
+            )
+        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Center Frequency label
         val freqLabel = if (band.centerFreqHz >= 1000) "${band.centerFreqHz / 1000}k" else "${band.centerFreqHz}"
         Text(
             text = freqLabel,
             fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
     }
