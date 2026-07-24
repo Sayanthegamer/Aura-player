@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -61,6 +62,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -265,27 +267,55 @@ private fun SongsTabContent(
     tracks: List<TrackEntity>,
     onTrackSelect: (TrackEntity, List<TrackEntity>, Int) -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 90.dp, top = 8.dp)
-    ) {
-        if (tracks.isNotEmpty()) {
-            item(key = "hero_card", contentType = "hero") {
-                QuickPlayHeroCard(
-                    firstTrack = tracks.first(),
-                    onPlayClick = { onTrackSelect(tracks.first(), tracks, 0) }
+    val musicNotePainter = rememberVectorPainter(Icons.Default.MusicNote)
+    val listState = rememberLazyListState()
+    var selectedMenuTrack by remember { mutableStateOf<TrackEntity?>(null) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 90.dp, top = 8.dp)
+        ) {
+            if (tracks.isNotEmpty()) {
+                item(key = "hero_card", contentType = "hero") {
+                    QuickPlayHeroCard(
+                        firstTrack = tracks.first(),
+                        onPlayClick = { onTrackSelect(tracks.first(), tracks, 0) }
+                    )
+                }
+            }
+
+            itemsIndexed(
+                items = tracks,
+                key = { _, item -> item.id },
+                contentType = { _, _ -> "track_item" }
+            ) { index, track ->
+                TrackListItem(
+                    track = track,
+                    onClick = { onTrackSelect(track, tracks, index) },
+                    onMenuClick = { selectedMenuTrack = track },
+                    placeholderPainter = musicNotePainter
                 )
             }
         }
 
-        itemsIndexed(
-            items = tracks,
-            key = { _, item -> item.id },
-            contentType = { _, _ -> "track_item" }
-        ) { index, track ->
-            TrackListItem(
-                track = track,
-                onClick = { onTrackSelect(track, tracks, index) }
+        // Host single DropdownMenu at screen level instead of 200+ popups inside LazyColumn items
+        DropdownMenu(
+            expanded = selectedMenuTrack != null,
+            onDismissRequest = { selectedMenuTrack = null }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Play") },
+                onClick = {
+                    selectedMenuTrack?.let { target ->
+                        val targetIndex = tracks.indexOfFirst { it.id == target.id }
+                        if (targetIndex >= 0) {
+                            onTrackSelect(target, tracks, targetIndex)
+                        }
+                    }
+                    selectedMenuTrack = null
+                }
             )
         }
     }
@@ -297,6 +327,15 @@ private fun QuickPlayHeroCard(
     onPlayClick: () -> Unit
 ) {
     val playPainter = rememberVectorPainter(Icons.Default.PlayArrow)
+    val context = LocalContext.current
+
+    val imageRequest = remember(firstTrack.albumArtUri) {
+        ImageRequest.Builder(context)
+            .data(firstTrack.albumArtUri)
+            .size(160, 160)
+            .crossfade(false)
+            .build()
+    }
 
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -318,10 +357,7 @@ private fun QuickPlayHeroCard(
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(firstTrack.albumArtUri)
-                        .crossfade(true)
-                        .build(),
+                    model = imageRequest,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     placeholder = playPainter,
@@ -361,19 +397,28 @@ private fun QuickPlayHeroCard(
 @Composable
 private fun TrackListItem(
     track: TrackEntity,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onMenuClick: () -> Unit,
+    placeholderPainter: Painter
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
-    val musicNotePainter = rememberVectorPainter(Icons.Default.MusicNote)
     val subtitleText = remember(track.artistName, track.albumName) { "${track.artistName} • ${track.albumName}" }
     val durationText = remember(track.durationMs) { formatDuration(track.durationMs) }
+    val context = LocalContext.current
+
+    val imageRequest = remember(track.albumArtUri) {
+        ImageRequest.Builder(context)
+            .data(track.albumArtUri)
+            .size(128, 128)
+            .crossfade(false)
+            .build()
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Box(
             modifier = Modifier
@@ -383,14 +428,11 @@ private fun TrackListItem(
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(track.albumArtUri)
-                    .crossfade(true)
-                    .build(),
+                model = imageRequest,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                placeholder = musicNotePainter,
-                error = musicNotePainter,
+                placeholder = placeholderPainter,
+                error = placeholderPainter,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -423,22 +465,8 @@ private fun TrackListItem(
             modifier = Modifier.padding(horizontal = 8.dp)
         )
 
-        Box {
-            IconButton(onClick = { menuExpanded = true }) {
-                Icon(imageVector = Icons.Default.MoreVert, contentDescription = "More options")
-            }
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Play") },
-                    onClick = {
-                        menuExpanded = false
-                        onClick()
-                    }
-                )
-            }
+        IconButton(onClick = onMenuClick) {
+            Icon(imageVector = Icons.Default.MoreVert, contentDescription = "More options")
         }
     }
 }
@@ -450,6 +478,7 @@ private fun AlbumsTabContent(
     onTrackSelect: (TrackEntity, List<TrackEntity>, Int) -> Unit
 ) {
     val albumPainter = rememberVectorPainter(Icons.Default.Album)
+    val context = LocalContext.current
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -463,6 +492,14 @@ private fun AlbumsTabContent(
             key = { it.id },
             contentType = { "album_item" }
         ) { album ->
+            val imageRequest = remember(album.albumArtUri) {
+                ImageRequest.Builder(context)
+                    .data(album.albumArtUri)
+                    .size(256, 256)
+                    .crossfade(false)
+                    .build()
+            }
+
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -485,10 +522,7 @@ private fun AlbumsTabContent(
                         contentAlignment = Alignment.Center
                     ) {
                         AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(album.albumArtUri)
-                                .crossfade(true)
-                                .build(),
+                            model = imageRequest,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             placeholder = albumPainter,
@@ -528,6 +562,7 @@ private fun ArtistsTabContent(
     onTrackSelect: (TrackEntity, List<TrackEntity>, Int) -> Unit
 ) {
     val personPainter = rememberVectorPainter(Icons.Default.Person)
+    val context = LocalContext.current
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -541,6 +576,15 @@ private fun ArtistsTabContent(
             val firstArtistTrack = remember(artist.id, tracks) {
                 tracks.firstOrNull { it.artistId == artist.id }
             }
+
+            val imageRequest = remember(firstArtistTrack?.albumArtUri) {
+                ImageRequest.Builder(context)
+                    .data(firstArtistTrack?.albumArtUri)
+                    .size(160, 160)
+                    .crossfade(false)
+                    .build()
+            }
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -561,10 +605,7 @@ private fun ArtistsTabContent(
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(firstArtistTrack?.albumArtUri)
-                            .crossfade(true)
-                            .build(),
+                        model = imageRequest,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         placeholder = personPainter,
