@@ -23,5 +23,6 @@ data class PlayerUiState(
     val currentPositionMs: Long = 0L,
     val durationMs: Long = 0L,
     val volume: Float = 1.0f,
-    val isBuffering: Boolean = false
+    val isBuffering: Boolean = false,
+    val isShuffleEnabled: Boolean = false
 )

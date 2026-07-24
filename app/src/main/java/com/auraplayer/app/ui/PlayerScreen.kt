@@ -66,6 +66,7 @@ fun PlayerScreen(
     onPrevTrack: () -> Unit,
     onAlbumArtTap: () -> Unit,
     onOpenAudioDsp: () -> Unit,
+    onShuffleToggle: () -> Unit = {},
     // Pre-resolved palette colors from MainActivity so no default-flash on navigation
     paletteAccent: Color = Color(0xFFD0BCFF),
     paletteDominant: Color = Color(0xFF1E1B2E),
@@ -390,12 +391,26 @@ fun PlayerScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        BouncyIconButton(onClick = { }) {
-                            Icon(
-                                imageVector = Icons.Default.Shuffle,
-                                contentDescription = "Shuffle",
-                                tint = Color.White.copy(alpha = 0.75f)
-                            )
+                        val shuffleActive = uiState.isShuffleEnabled
+                        Box(contentAlignment = Alignment.BottomCenter) {
+                            BouncyIconButton(onClick = onShuffleToggle) {
+                                Icon(
+                                    imageVector = Icons.Default.Shuffle,
+                                    contentDescription = "Shuffle",
+                                    tint = if (shuffleActive) animatedAccent else Color.White.copy(alpha = 0.45f),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            // Active indicator dot below icon
+                            if (shuffleActive) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(bottom = 4.dp)
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(animatedAccent)
+                                )
+                            }
                         }
 
                         BouncyIconButton(onClick = onPrevTrack) {

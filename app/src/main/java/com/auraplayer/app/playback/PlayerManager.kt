@@ -90,6 +90,10 @@ class PlayerManager(
                 }
             }
 
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                _uiState.update { it.copy(isShuffleEnabled = shuffleModeEnabled) }
+            }
+
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 val mediaId = mediaItem?.mediaId
                 val trackEntity = mediaId?.let { activeTrackMap[it] }
@@ -228,6 +232,12 @@ class PlayerManager(
     fun seekTo(positionMs: Long) {
         player.seekTo(positionMs)
         _uiState.update { it.copy(currentPositionMs = positionMs) }
+    }
+
+    fun toggleShuffle() {
+        val newState = !player.shuffleModeEnabled
+        player.shuffleModeEnabled = newState
+        // State update handled by onShuffleModeEnabledChanged listener
     }
 
     fun setVolume(volume: Float) {

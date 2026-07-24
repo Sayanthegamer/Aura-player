@@ -266,6 +266,7 @@ class MainActivity : ComponentActivity() {
                                     onPrevTrack = { playerManager.skipToPrevious() },
                                     onAlbumArtTap = { currentScreen = Screen.Lyrics },
                                     onOpenAudioDsp = { showDspBottomSheet = true },
+                                    onShuffleToggle = { playerManager.toggleShuffle() },
                                     paletteAccent = animatedAccent,
                                     paletteDominant = animatedDominant,
                                     paletteSecondary = animatedSecondary
