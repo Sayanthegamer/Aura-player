@@ -17,8 +17,10 @@ data class TrackEntity(
     val uriString: String,
     val albumArtUri: String?,
     val mimeType: String,
+    val codec: String = "MP3",
     val bitrate: Int = 0,
     val sampleRate: Int = 0,
+    val bitDepth: Int = 16,
     val replayGainTrackGain: Float? = null,
     val replayGainTrackPeak: Float? = null,
     val dateAdded: Long = 0L

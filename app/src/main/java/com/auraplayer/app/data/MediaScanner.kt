@@ -5,11 +5,13 @@ import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
+import com.auraplayer.app.metadata.MetadataExtractor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import java.io.File
 
 sealed class ScanState {
     object Idle : ScanState()
@@ -103,6 +105,29 @@ class MediaScanner(
                         albumId
                     ).toString()
 
+                    // Extract actual audio tags via jaudiotagger
+                    val audioFile = File(filePath)
+                    val extracted = if (audioFile.exists()) {
+                        try { MetadataExtractor.extract(audioFile) } catch (e: Exception) { null }
+                    } else null
+
+                    val metadata = extracted?.metadata
+
+                    val codec = metadata?.codec?.takeIf { it.isNotBlank() && it != "UNKNOWN" } ?: when {
+                        mimeType.contains("flac", ignoreCase = true) || filePath.endsWith(".flac", ignoreCase = true) -> "FLAC"
+                        mimeType.contains("aac", ignoreCase = true) || filePath.endsWith(".aac", ignoreCase = true) -> "AAC"
+                        mimeType.contains("m4a", ignoreCase = true) || filePath.endsWith(".m4a", ignoreCase = true) -> "M4A"
+                        mimeType.contains("wav", ignoreCase = true) || filePath.endsWith(".wav", ignoreCase = true) -> "WAV"
+                        mimeType.contains("ogg", ignoreCase = true) || filePath.endsWith(".ogg", ignoreCase = true) -> "OGG"
+                        else -> "MP3"
+                    }
+
+                    val sampleRate = if ((metadata?.sampleRate ?: 0) > 0) metadata!!.sampleRate else 44100
+                    val bitDepth = if ((metadata?.bitDepth ?: 0) > 0) metadata!!.bitDepth else if (codec == "FLAC" || codec == "WAV") 24 else 16
+                    val bitrate = if ((metadata?.bitrateKbps ?: 0) > 0) metadata!!.bitrateKbps else 320
+                    val replayGainTrackGain = metadata?.replayGainDb
+                    val replayGainTrackPeak = metadata?.replayGainPeak
+
                     val trackEntity = TrackEntity(
                         id = id,
                         mediaStoreId = id,
@@ -111,15 +136,17 @@ class MediaScanner(
                         albumName = album,
                         artistId = artistId,
                         albumId = albumId,
-                        durationMs = duration,
+                        durationMs = if (duration > 0) duration else (metadata?.durationMs ?: 0L),
                         filePath = filePath,
                         uriString = contentUri.toString(),
                         albumArtUri = albumArtUri,
                         mimeType = mimeType,
-                        bitrate = 0,
-                        sampleRate = 0,
-                        replayGainTrackGain = null,
-                        replayGainTrackPeak = null,
+                        codec = codec,
+                        bitrate = bitrate,
+                        sampleRate = sampleRate,
+                        bitDepth = bitDepth,
+                        replayGainTrackGain = replayGainTrackGain,
+                        replayGainTrackPeak = replayGainTrackPeak,
                         dateAdded = dateAdded
                     )
 

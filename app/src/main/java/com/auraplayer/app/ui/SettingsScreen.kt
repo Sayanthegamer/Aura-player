@@ -1,5 +1,8 @@
 package com.auraplayer.app.ui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FolderOff
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
@@ -78,6 +82,24 @@ fun SettingsScreen(
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var customFolderPath by remember { mutableStateOf("") }
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let { selectedUri ->
+            val pathStr = selectedUri.path ?: ""
+            val decodedPath = Uri.decode(pathStr)
+            val cleanFolder = when {
+                decodedPath.contains(":") -> decodedPath.substringAfterLast(":")
+                decodedPath.contains("/document/") -> decodedPath.substringAfterLast("/document/")
+                else -> decodedPath
+            }.trim('/')
+
+            if (cleanFolder.isNotBlank()) {
+                onAddBlacklistFolder(cleanFolder)
+            }
+        }
+    }
 
     val presetFolders = listOf(
         "WhatsApp/Media",
@@ -338,13 +360,24 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    Button(
+                        onClick = { folderPickerLauncher.launch(null) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(imageVector = Icons.Default.FolderOpen, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Select Folder via System Picker")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     OutlinedButton(
                         onClick = { showAddDialog = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add Custom Excluded Folder")
+                        Text("Enter Custom Path Manually")
                     }
                 }
             }

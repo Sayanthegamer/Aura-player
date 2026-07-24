@@ -1,13 +1,14 @@
 package com.auraplayer.app.playback
 
 import android.content.Context
-import com.auraplayer.app.metadata.MetadataExtractor
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.auraplayer.app.data.TrackEntity
+import com.auraplayer.app.metadata.MetadataExtractor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 
 class PlayerManager(
     context: Context,
@@ -37,6 +39,7 @@ class PlayerManager(
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
 
+    private val activeTrackMap = ConcurrentHashMap<String, TrackEntity>()
     private var positionUpdateJob: Job? = null
 
     init {
@@ -62,26 +65,37 @@ class PlayerManager(
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                val title = mediaItem?.mediaMetadata?.title?.toString() ?: "Sample Audio"
-                val artist = mediaItem?.mediaMetadata?.artist?.toString() ?: "Aura Artist"
-                val album = mediaItem?.mediaMetadata?.albumTitle?.toString() ?: "Aura Album"
+                val mediaId = mediaItem?.mediaId
+                val trackEntity = mediaId?.let { activeTrackMap[it] }
 
-                val gainDb = -2.1f
-                val peak = 0.95f
+                val title = mediaItem?.mediaMetadata?.title?.toString() ?: trackEntity?.title ?: "Unknown Track"
+                val artist = mediaItem?.mediaMetadata?.artist?.toString() ?: trackEntity?.artistName ?: "Unknown Artist"
+                val album = mediaItem?.mediaMetadata?.albumTitle?.toString() ?: trackEntity?.albumName ?: "Unknown Album"
+
+                val codec = trackEntity?.codec ?: "MP3"
+                val sampleRate = if ((trackEntity?.sampleRate ?: 0) > 0) trackEntity!!.sampleRate else 44100
+                val bitDepth = if ((trackEntity?.bitDepth ?: 0) > 0) trackEntity!!.bitDepth else if (codec == "FLAC" || codec == "WAV") 24 else 16
+                val bitrateKbps = if ((trackEntity?.bitrate ?: 0) > 0) trackEntity!!.bitrate else 320
+                val gainDb = trackEntity?.replayGainTrackGain
+                val peak = trackEntity?.replayGainTrackPeak
+
+                val artworkUri = mediaItem?.mediaMetadata?.artworkUri?.toString() ?: trackEntity?.albumArtUri
+
                 applyReplayGain(gainDb, peak)
 
                 _uiState.update {
                     it.copy(
                         currentTrack = TrackMetadata(
-                            id = mediaItem?.mediaId ?: "default",
+                            id = mediaId ?: "default",
                             title = title,
                             artist = artist,
                             album = album,
-                            durationMs = if (player.duration != C.TIME_UNSET) player.duration else 0L,
-                            codec = "FLAC",
-                            sampleRate = 96000,
-                            bitDepth = 24,
-                            bitrateKbps = 1411,
+                            durationMs = if (player.duration != C.TIME_UNSET) player.duration else (trackEntity?.durationMs ?: 0L),
+                            artworkUri = artworkUri,
+                            codec = codec,
+                            sampleRate = sampleRate,
+                            bitDepth = bitDepth,
+                            bitrateKbps = bitrateKbps,
                             replayGainDb = gainDb,
                             replayGainPeak = peak
                         )
@@ -114,9 +128,11 @@ class PlayerManager(
         player.play()
     }
 
-    fun playTrackList(tracks: List<com.auraplayer.app.data.TrackEntity>, startIndex: Int = 0) {
+    fun playTrackList(tracks: List<TrackEntity>, startIndex: Int = 0) {
         if (tracks.isEmpty()) return
+        activeTrackMap.clear()
         val mediaItems = tracks.map { track ->
+            activeTrackMap[track.id.toString()] = track
             MediaItem.Builder()
                 .setMediaId(track.id.toString())
                 .setUri(track.uriString)

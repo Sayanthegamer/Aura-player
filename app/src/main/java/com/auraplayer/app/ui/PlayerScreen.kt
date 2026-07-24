@@ -38,6 +38,10 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -226,11 +230,22 @@ fun PlayerScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.MusicNote,
+                        SubcomposeAsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(track?.artworkUri)
+                                .crossfade(true)
+                                .build(),
                             contentDescription = "Album Artwork Canvas",
-                            tint = dynamicColors.primaryAccent,
-                            modifier = Modifier.size(108.dp)
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                            error = {
+                                Icon(
+                                    imageVector = Icons.Default.MusicNote,
+                                    contentDescription = "Album Artwork Canvas",
+                                    tint = dynamicColors.primaryAccent,
+                                    modifier = Modifier.size(108.dp)
+                                )
+                            }
                         )
                     }
                 }
