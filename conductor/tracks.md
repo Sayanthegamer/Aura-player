@@ -5,4 +5,4 @@
 - [x] **Track: Phase 2 - Home Screen, Local Media Library Scanner & Settings**
   *Link: [index.md](./archive/home_library_settings_20260724/index.md)*
 - [x] **Track: Blacklist Folder Feature**
-  *Link: [index.md](./tracks/blacklist_folders_20260724/index.md)*
+  *Link: [index.md](./archive/blacklist_folders_20260724/index.md)*
