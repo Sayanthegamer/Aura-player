@@ -1,6 +1,5 @@
 package com.auraplayer.app.ui
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -42,6 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -102,7 +103,7 @@ fun LyricCanvas(
                 ) {
                     Column {
                         Text(
-                            text = "SYNCED LYRICS",
+                            text = "SYNCED LYRICS (${lyrics.source})",
                             color = colorScheme.primary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -179,7 +180,7 @@ fun LyricCanvas(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Content: Loading / Empty / Live Syllable Lyrics
+                // Content: Loading / Empty / Syllable & Romanized Lyrics
                 if (isLoading) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -192,7 +193,7 @@ fun LyricCanvas(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "Searching synced lyrics...",
+                                text = "Fetching synced lyrics from LRCLIB & LyricsPlus...",
                                 color = colorScheme.onSurfaceVariant,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium
@@ -262,37 +263,59 @@ private fun WordSyncedLine(
     isActive: Boolean,
     colorScheme: ColorScheme
 ) {
-    if (!isActive || line.wordTokens.isEmpty()) {
-        Text(
-            text = line.content,
-            color = if (isActive) colorScheme.onBackground else colorScheme.onSurfaceVariant,
-            fontSize = if (isActive) 24.sp else 18.sp,
-            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth()
-        )
-    } else {
-        FlowRow(
-            horizontalArrangement = Arrangement.Start,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            line.wordTokens.forEach { token ->
-                val isWordActive = currentPositionMs >= token.startMs
-                val animatedColor by animateColorAsState(
-                    targetValue = if (isWordActive) colorScheme.primary else colorScheme.onBackground.copy(alpha = 0.6f),
-                    animationSpec = tween(150),
-                    label = "wordColor"
-                )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (!isActive || line.wordTokens.isEmpty()) {
+            Text(
+                text = line.content,
+                color = if (isActive) colorScheme.onBackground else colorScheme.onSurfaceVariant,
+                fontSize = if (isActive) 24.sp else 18.sp,
+                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
+            )
+        } else {
+            FlowRow(
+                horizontalArrangement = Arrangement.Start,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                line.wordTokens.forEach { token ->
+                    val isPastWord = currentPositionMs >= token.endMs
+                    val isCurrentWord = currentPositionMs >= token.startMs && currentPositionMs < token.endMs
 
-                Text(
-                    text = "${token.word} ",
-                    color = animatedColor,
-                    fontSize = 24.sp,
-                    fontWeight = if (isWordActive) FontWeight.ExtraBold else FontWeight.Bold,
-                    modifier = Modifier.padding(end = 2.dp)
-                )
+                    val progress = if (isCurrentWord) {
+                        ((currentPositionMs - token.startMs).toFloat() / (token.endMs - token.startMs).coerceAtLeast(50L).toFloat()).coerceIn(0f, 1f)
+                    } else if (isPastWord) 1f else 0f
+
+                    val wordColor = lerp(
+                        colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        colorScheme.primary,
+                        progress
+                    )
+
+                    Text(
+                        text = "${token.word} ",
+                        color = wordColor,
+                        fontSize = 24.sp,
+                        fontWeight = if (isCurrentWord || isPastWord) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        modifier = Modifier.padding(end = 2.dp)
+                    )
+                }
             }
+        }
+
+        // Render Romanization or Translation sub-line if available
+        val subText = line.romanization ?: line.translation
+        if (!subText.isNullOrBlank()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = subText,
+                color = if (isActive) colorScheme.secondary else colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                fontSize = if (isActive) 16.sp else 13.sp,
+                fontWeight = FontWeight.Medium,
+                fontStyle = FontStyle.Italic,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

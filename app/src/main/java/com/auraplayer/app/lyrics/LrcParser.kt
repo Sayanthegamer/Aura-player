@@ -25,21 +25,24 @@ object LrcParser {
                 val lineStartMs = (min * 60 * 1000) + (sec * 1000) + ms
 
                 val remainingText = matcher.group(4) ?: ""
-                rawLines.add(RawLine(lineStartMs, remainingText))
+                if (remainingText.isNotBlank()) {
+                    rawLines.add(RawLine(lineStartMs, remainingText))
+                }
             }
         }
 
         val sortedRaw = rawLines.sortedBy { it.startMs }
         val parsedLines = mutableListOf<LyricLine>()
 
-        for (i in sortedRaw.indices) {
-            val currentRaw = sortedRaw[i]
+        var idx = 0
+        while (idx < sortedRaw.size) {
+            val currentRaw = sortedRaw[idx]
             val lineStartMs = currentRaw.startMs
             val text = currentRaw.text
             val wordTokens = mutableListOf<WordToken>()
             var cleanContent = ""
 
-            // Check pattern 1: <mm:ss.xx>Word
+            // Pattern 1: <mm:ss.xx>Word
             val angleMatcher = WORD_ANGLE_PATTERN.matcher(text)
             if (angleMatcher.find()) {
                 isWordSynced = true
@@ -56,7 +59,7 @@ object LrcParser {
                 }
                 cleanContent = sb.toString()
             } else {
-                // Check pattern 2: (mm:ss.xx)Word
+                // Pattern 2: (mm:ss.xx)Word
                 val parenMatcher = WORD_PAREN_PATTERN.matcher(text)
                 if (parenMatcher.find()) {
                     isWordSynced = true
@@ -73,7 +76,7 @@ object LrcParser {
                     }
                     cleanContent = sb.toString()
                 } else {
-                    // Check pattern 3: <ms_offset>Word
+                    // Pattern 3: <ms_offset>Word
                     val offsetMatcher = WORD_OFFSET_PATTERN.matcher(text)
                     if (offsetMatcher.find()) {
                         isWordSynced = true
@@ -94,7 +97,7 @@ object LrcParser {
             if (wordTokens.isEmpty()) {
                 cleanContent = text.trim()
             } else {
-                // Adjust word endMs based on next word startMs
+                // Compute precise endMs for word tokens
                 for (wIdx in 0 until wordTokens.size - 1) {
                     val currentWord = wordTokens[wIdx]
                     val nextWord = wordTokens[wIdx + 1]
@@ -102,13 +105,30 @@ object LrcParser {
                 }
             }
 
+            // Check if next raw line has identical timestamp (Romanization / Translation line)
+            var romanization: String? = null
+            var translation: String? = null
+
+            if (idx + 1 < sortedRaw.size && Math.abs(sortedRaw[idx + 1].startMs - lineStartMs) <= 150) {
+                val nextText = sortedRaw[idx + 1].text.trim()
+                if (isLatinText(nextText) && !isLatinText(cleanContent)) {
+                    romanization = nextText
+                } else {
+                    translation = nextText
+                }
+                idx++
+            }
+
             parsedLines.add(
                 LyricLine(
                     startMs = lineStartMs,
                     content = cleanContent,
+                    translation = translation,
+                    romanization = romanization,
                     wordTokens = wordTokens
                 )
             )
+            idx++
         }
 
         return ParsedLyrics(
@@ -116,6 +136,10 @@ object LrcParser {
             isEnhancedWordSynced = isWordSynced,
             rawContent = lrcContent
         )
+    }
+
+    private fun isLatinText(text: String): Boolean {
+        return text.all { it.code in 0..0x024F || it.isWhitespace() || !it.isLetter() }
     }
 
     private fun parseFractionalMs(fracStr: String): Long {
