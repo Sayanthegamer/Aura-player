@@ -1,9 +1,18 @@
 package com.auraplayer.app.ui
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,8 +49,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
@@ -65,23 +76,54 @@ fun PlayerScreen(
     val track = uiState.currentTrack
     val colorScheme = MaterialTheme.colorScheme
 
+    // Ambient Animated Aura Gradient Pulsing
+    val infiniteTransition = rememberInfiniteTransition(label = "auraTransition")
+    val auraScale by infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.25f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "auraScale"
+    )
+    val auraAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.65f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "auraAlpha"
+    )
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = colorScheme.background
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            colorScheme.surfaceContainerLow,
-                            colorScheme.background,
-                            colorScheme.surfaceContainerLowest
-                        )
-                    )
-                )
+            modifier = Modifier.fillMaxSize()
         ) {
+            // Ambient Aura Glow Orbs (Dynamic Color Glow)
+            Box(
+                modifier = Modifier
+                    .size(320.dp)
+                    .align(Alignment.TopCenter)
+                    .padding(top = 80.dp)
+                    .scale(auraScale)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                colorScheme.primary.copy(alpha = auraAlpha),
+                                colorScheme.tertiary.copy(alpha = auraAlpha * 0.5f),
+                                Color.Transparent
+                            )
+                        ),
+                        shape = CircleShape
+                    )
+            )
+
+            // Main Player Column Layout
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -109,14 +151,15 @@ fun PlayerScreen(
                             text = "Now Playing",
                             color = colorScheme.onBackground,
                             fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.ExtraBold
                         )
                     }
 
                     // Pixel Audio Routing Pill Badge
                     Surface(
-                        color = colorScheme.surfaceContainerHigh,
-                        shape = CircleShape
+                        color = colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
+                        shape = CircleShape,
+                        shadowElevation = 4.dp
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -139,13 +182,16 @@ fun PlayerScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Pixel Expressive Album Art Card
+                // Expressive Bouncy Album Art Card
                 val albumScale by animateFloatAsState(
-                    targetValue = if (uiState.isPlaying) 1.0f else 0.93f,
-                    animationSpec = tween(durationMillis = 350),
-                    label = "pixelAlbumScale"
+                    targetValue = if (uiState.isPlaying) 1.0f else 0.91f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "bouncyAlbumScale"
                 )
 
                 Card(
@@ -153,11 +199,11 @@ fun PlayerScreen(
                         .fillMaxWidth(0.88f)
                         .aspectRatio(1f)
                         .scale(albumScale)
-                        .clip(RoundedCornerShape(36.dp))
+                        .clip(RoundedCornerShape(40.dp))
                         .clickable { onAlbumArtTap() },
-                    shape = RoundedCornerShape(36.dp),
+                    shape = RoundedCornerShape(40.dp),
                     colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceContainerHigh),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 20.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -166,7 +212,8 @@ fun PlayerScreen(
                                 Brush.linearGradient(
                                     colors = listOf(
                                         colorScheme.primaryContainer,
-                                        colorScheme.surfaceContainerHighest
+                                        colorScheme.surfaceContainerHighest,
+                                        colorScheme.secondaryContainer
                                     )
                                 )
                             ),
@@ -176,28 +223,35 @@ fun PlayerScreen(
                             imageVector = Icons.Default.MusicNote,
                             contentDescription = "Album Artwork Canvas",
                             tint = colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(104.dp)
+                            modifier = Modifier.size(108.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Metadata Title, Artist, and Badges
+                // Metadata & Animated Equalizer Waveform
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = track?.title ?: "Aura Soundscape",
-                        color = colorScheme.onBackground,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = track?.title ?: "Aura Soundscape",
+                            color = colorScheme.onBackground,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
                         text = track?.artist ?: "Aura Audio Engine",
                         color = colorScheme.onSurfaceVariant,
@@ -209,6 +263,12 @@ fun PlayerScreen(
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
+
+                    // Expressive Animated Equalizer Bars
+                    if (uiState.isPlaying) {
+                        AnimatedEqualizerBars(colorScheme.primary)
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
 
                     // Badges: Audio Chip + ReplayGain
                     Row(
@@ -247,7 +307,7 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Pixel Expressive Slider & Timestamps
+                // Progress Slider & Timestamps
                 Column(modifier = Modifier.fillMaxWidth()) {
                     val currentPosMs = uiState.currentPositionMs
                     val totalDurationMs = if (uiState.durationMs > 0) uiState.durationMs else 180000L
@@ -289,11 +349,11 @@ fun PlayerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Pixel Expressive Floating Control Bar Capsule
+                // Pixel Expressive Floating Control Bar with Bouncy Press Feedback
                 Surface(
-                    color = colorScheme.surfaceContainerHigh,
+                    color = colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
                     shape = CircleShape,
-                    shadowElevation = 8.dp,
+                    shadowElevation = 12.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -303,7 +363,7 @@ fun PlayerScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { }) {
+                        BouncyIconButton(onClick = { }) {
                             Icon(
                                 imageVector = Icons.Default.Shuffle,
                                 contentDescription = "Shuffle",
@@ -311,7 +371,7 @@ fun PlayerScreen(
                             )
                         }
 
-                        IconButton(onClick = onPrevTrack) {
+                        BouncyIconButton(onClick = onPrevTrack) {
                             Icon(
                                 imageVector = Icons.Default.SkipPrevious,
                                 contentDescription = "Previous Track",
@@ -320,16 +380,29 @@ fun PlayerScreen(
                             )
                         }
 
-                        // Pixel Expressive Rounded Squircle Play/Pause FAB
+                        // Pixel Expressive Bouncy Play/Pause FAB
+                        val playInteractionSource = remember { MutableInteractionSource() }
+                        val isPlayPressed by playInteractionSource.collectIsPressedAsState()
+                        val fabScale by animateFloatAsState(
+                            targetValue = if (isPlayPressed) 0.88f else 1.0f,
+                            animationSpec = spring(
+                                stiffness = Spring.StiffnessMediumLow,
+                                dampingRatio = Spring.DampingRatioMediumBouncy
+                            ),
+                            label = "fabScale"
+                        )
+
                         Surface(
                             onClick = onPlayPauseToggle,
-                            shape = RoundedCornerShape(24.dp),
+                            interactionSource = playInteractionSource,
+                            shape = RoundedCornerShape(26.dp),
                             color = colorScheme.primaryContainer,
-                            shadowElevation = 4.dp
+                            shadowElevation = 8.dp,
+                            modifier = Modifier.scale(fabScale)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(68.dp)
+                                    .size(72.dp)
                                     .padding(4.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -337,12 +410,12 @@ fun PlayerScreen(
                                     imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                     contentDescription = if (uiState.isPlaying) "Pause" else "Play",
                                     tint = colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(38.dp)
                                 )
                             }
                         }
 
-                        IconButton(onClick = onNextTrack) {
+                        BouncyIconButton(onClick = onNextTrack) {
                             Icon(
                                 imageVector = Icons.Default.SkipNext,
                                 contentDescription = "Next Track",
@@ -351,7 +424,7 @@ fun PlayerScreen(
                             )
                         }
 
-                        IconButton(onClick = onAlbumArtTap) {
+                        BouncyIconButton(onClick = onAlbumArtTap) {
                             Icon(
                                 imageVector = Icons.Default.Lyrics,
                                 contentDescription = "Synced Lyrics",
@@ -362,6 +435,71 @@ fun PlayerScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun BouncyIconButton(
+    onClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.84f else 1.0f,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioMediumBouncy
+        ),
+        label = "btnScale"
+    )
+
+    Box(
+        modifier = Modifier
+            .scale(scale)
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun AnimatedEqualizerBars(tint: Color) {
+    val transition = rememberInfiniteTransition(label = "eqBars")
+
+    val h1 by transition.animateFloat(
+        initialValue = 4f, targetValue = 18f,
+        animationSpec = infiniteRepeatable(tween(450, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h1"
+    )
+    val h2 by transition.animateFloat(
+        initialValue = 18f, targetValue = 6f,
+        animationSpec = infiniteRepeatable(tween(350, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h2"
+    )
+    val h3 by transition.animateFloat(
+        initialValue = 6f, targetValue = 22f,
+        animationSpec = infiniteRepeatable(tween(550, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h3"
+    )
+    val h4 by transition.animateFloat(
+        initialValue = 20f, targetValue = 4f,
+        animationSpec = infiniteRepeatable(tween(400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "h4"
+    )
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier.height(24.dp)
+    ) {
+        Box(modifier = Modifier.width(4.dp).height(h1.dp).background(tint, CircleShape))
+        Box(modifier = Modifier.width(4.dp).height(h2.dp).background(tint, CircleShape))
+        Box(modifier = Modifier.width(4.dp).height(h3.dp).background(tint, CircleShape))
+        Box(modifier = Modifier.width(4.dp).height(h4.dp).background(tint, CircleShape))
     }
 }
 
