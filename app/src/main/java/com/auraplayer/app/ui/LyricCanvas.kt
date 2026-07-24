@@ -1,6 +1,8 @@
 package com.auraplayer.app.ui
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,6 +55,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.auraplayer.app.lyrics.LyricLine
 import com.auraplayer.app.lyrics.ParsedLyrics
+import kotlin.math.abs
+import kotlin.math.max
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -79,16 +83,16 @@ fun LyricCanvas(
         }
     }
 
+    // Spring auto-scroll centering to 35% viewport height
     LaunchedEffect(activeIndex) {
         if (lyrics.lines.isNotEmpty()) {
             listState.animateScrollToItem(
                 index = activeIndex.coerceAtLeast(0),
-                scrollOffset = -220
+                scrollOffset = -240
             )
         }
     }
 
-    // Apple Music Ethereal Background Gradient
     val ambientGradient = remember(colorScheme.primary, colorScheme.tertiary) {
         Brush.verticalGradient(
             colors = listOf(
@@ -107,18 +111,18 @@ fun LyricCanvas(
         // Ethereal Glow Orbs
         Box(
             modifier = Modifier
-                .size(320.dp)
+                .size(340.dp)
                 .align(Alignment.TopEnd)
                 .graphicsLayer { alpha = 0.25f }
-                .blur(80.dp)
+                .blur(85.dp)
                 .background(colorScheme.primary)
         )
         Box(
             modifier = Modifier
-                .size(360.dp)
+                .size(380.dp)
                 .align(Alignment.BottomStart)
                 .graphicsLayer { alpha = 0.20f }
-                .blur(90.dp)
+                .blur(95.dp)
                 .background(colorScheme.tertiary)
         )
 
@@ -137,7 +141,7 @@ fun LyricCanvas(
             ) {
                 Column {
                     Text(
-                        text = "LIVE LYRICS • ${lyrics.source.uppercase()}",
+                        text = "ETHEREAL LYRICS • ${lyrics.source.uppercase()}",
                         color = colorScheme.primary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
@@ -214,7 +218,7 @@ fun LyricCanvas(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Content: Loading / Empty / Ethereal Lyrics List
+            // Content: Loading / Empty / Spatial Physics Lyrics List
             if (isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -253,25 +257,30 @@ fun LyricCanvas(
                     verticalArrangement = Arrangement.spacedBy(28.dp)
                 ) {
                     itemsIndexed(lyrics.lines) { index, line ->
-                        val isActive = index == activeIndex
-                        val alpha by animateFloatAsState(
-                            targetValue = if (isActive) 1.0f else 0.30f,
-                            animationSpec = tween(durationMillis = 350),
-                            label = "lyricAlpha"
+                        val distanceFromActive = abs(index - activeIndex)
+                        val targetScale = max(0.85f, 1.0f - (distanceFromActive * 0.05f))
+                        val targetAlpha = if (index == activeIndex) 1.0f else max(0.20f, 0.35f - (distanceFromActive * 0.04f))
+                        val targetTranslationY = if (index == activeIndex) 0f else (if (index < activeIndex) -4f else 4f)
+
+                        val scaleState by animateFloatAsState(
+                            targetValue = targetScale,
+                            animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioLowBouncy),
+                            label = "lineScale"
                         )
-                        val scale by animateFloatAsState(
-                            targetValue = if (isActive) 1.06f else 0.94f,
-                            animationSpec = tween(durationMillis = 350),
-                            label = "lyricScale"
+                        val alphaState by animateFloatAsState(
+                            targetValue = targetAlpha,
+                            animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioLowBouncy),
+                            label = "lineAlpha"
                         )
 
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .graphicsLayer {
-                                    this.alpha = alpha
-                                    this.scaleX = scale
-                                    this.scaleY = scale
+                                    this.alpha = alphaState
+                                    this.scaleX = scaleState
+                                    this.scaleY = scaleState
+                                    this.translationY = targetTranslationY.dp.toPx()
                                 }
                                 .clickable {
                                     onSeek(line.startMs)
@@ -280,7 +289,7 @@ fun LyricCanvas(
                             AppleMusicWordLine(
                                 line = line,
                                 currentPositionMs = currentPositionMs,
-                                isActive = isActive,
+                                isActive = index == activeIndex,
                                 colorScheme = colorScheme
                             )
                         }
@@ -320,8 +329,22 @@ private fun AppleMusicWordLine(
                     val isPastWord = currentPositionMs >= token.endMs
                     val isCurrentWord = currentPositionMs >= token.startMs && currentPositionMs < token.endMs
 
+                    val wordDurationMs = (token.endMs - token.startMs).coerceAtLeast(100L)
+                    val isExtendedNote = wordDurationMs > 1200L
+
+                    val targetWordScale = if (isCurrentWord) (if (isExtendedNote) 1.15f else 1.08f) else 1.0f
+
+                    val wordScale by animateFloatAsState(
+                        targetValue = targetWordScale,
+                        animationSpec = spring(
+                            stiffness = Spring.StiffnessLow,
+                            dampingRatio = Spring.DampingRatioLowBouncy
+                        ),
+                        label = "wordScale"
+                    )
+
                     val progress = if (isCurrentWord) {
-                        ((currentPositionMs - token.startMs).toFloat() / (token.endMs - token.startMs).coerceAtLeast(50L).toFloat()).coerceIn(0f, 1f)
+                        ((currentPositionMs - token.startMs).toFloat() / wordDurationMs.toFloat()).coerceIn(0f, 1f)
                     } else if (isPastWord) 1f else 0f
 
                     val wordColor = lerp(
@@ -330,13 +353,23 @@ private fun AppleMusicWordLine(
                         progress
                     )
 
+                    val shadowColor = colorScheme.primary.copy(alpha = if (isCurrentWord) 0.8f else 0f)
+
                     Text(
-                        text = "${token.word} ",
+                        text = token.word,
                         color = wordColor,
                         fontSize = 30.sp,
                         fontWeight = if (isCurrentWord || isPastWord) FontWeight.Black else FontWeight.Bold,
                         lineHeight = 38.sp,
-                        modifier = Modifier.padding(end = 3.dp)
+                        modifier = Modifier
+                            .graphicsLayer {
+                                this.scaleX = wordScale
+                                this.scaleY = wordScale
+                                this.shadowElevation = if (isCurrentWord) (if (isExtendedNote) 18.dp.toPx() else 12.dp.toPx()) else 0f
+                                this.spotShadowColor = shadowColor
+                                this.ambientShadowColor = shadowColor
+                            }
+                            .padding(end = if (isCurrentWord) 5.dp else 2.dp)
                     )
                 }
             }
