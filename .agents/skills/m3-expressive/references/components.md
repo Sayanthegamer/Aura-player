@@ -197,7 +197,49 @@ Scaffold(
 * **Container Color**: `surfaceContainer` (Level 2 Elevation / $3\text{dp}$)
 * **Action Slots**: Leading action icons + embedded or end-aligned FAB (Play / Pause or Shuffle).
 
-### D. Accessibility Standards
-* **Action Target Box**: Every action and navigation icon in the app bar must maintain a minimum touch target area of **$48\text{dp} \times 48\text{dp}$**.
-* **Icon Labels**: All app bar icon buttons must provide localized, descriptive `contentDescription` strings for screen readers.
+## 🔴 8. Badges (Small & Large Badge Specifications)
+
+Based on official [Material 3 Badges Overview](https://m3.material.io/components/badges/overview), [Specs](https://m3.material.io/components/badges/specs), [Guidelines](https://m3.material.io/components/badges/guidelines), and [Accessibility](https://m3.material.io/components/badges/accessibility).
+
+### A. Badge Variant Specs
+
+| Badge Variant | Dimensions | Container Shape | Primary Usage |
+|:---|:---|:---|:---|
+| **Small Badge (Dot)** | **6 dp × 6 dp** | Circle (`9999.dp`) | Active mode indicator (Shuffle active dot), unread status |
+| **Large Badge (Numbered)** | **16 dp** Height | Full Pill (`9999.dp`) | Queue track count (`12`), pending scrobble count (`5`) |
+
+### B. Color Tokens & Typography
+* **Container Color**: `error` (for alerts/notifications) or `tertiary` (for media queue counts).
+* **Content Color**: `onError` or `onTertiary`.
+* **Typography**: `labelSmall` ($11\text{sp}$) with bold weight.
+
+### C. Jetpack Compose `BadgedBox` Pattern
+
+```kotlin
+// Queue Icon with Active Track Count Badge
+BadgedBox(
+    badge = {
+        if (queueCount > 0) {
+            Badge(
+                containerColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.onTertiary
+            ) {
+                Text(
+                    text = queueCount.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+) {
+    IconButton(onClick = onOpenQueue) {
+        Icon(Icons.Default.QueueMusic, contentDescription = "Play Queue, $queueCount tracks")
+    }
+}
+```
+
+### D. Accessibility
+* **Screen Reader Announcement**: Always merge the badge's numeric count into the parent icon's `contentDescription` (e.g. `"Queue, 12 items"`) so TalkBack announces the combined state.
+
 
