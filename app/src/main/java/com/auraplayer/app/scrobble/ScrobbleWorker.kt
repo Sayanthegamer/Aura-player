@@ -37,4 +37,31 @@ class ScrobbleWorker(
             Result.retry()
         }
     }
+
+    companion object {
+        const val WORK_NAME = "aura_scrobble_sync_worker"
+
+        fun enqueue(context: Context) {
+            val constraints = androidx.work.Constraints.Builder()
+                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                .setRequiresBatteryNotLow(true)
+                .setRequiresStorageNotLow(true)
+                .build()
+
+            val request = androidx.work.OneTimeWorkRequestBuilder<ScrobbleWorker>()
+                .setConstraints(constraints)
+                .setBackoffCriteria(
+                    androidx.work.BackoffPolicy.EXPONENTIAL,
+                    androidx.work.WorkRequest.MIN_BACKOFF_MILLIS,
+                    java.util.concurrent.TimeUnit.MILLISECONDS
+                )
+                .build()
+
+            androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
+                WORK_NAME,
+                androidx.work.ExistingWorkPolicy.KEEP,
+                request
+            )
+        }
+    }
 }
