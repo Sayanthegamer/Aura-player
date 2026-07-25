@@ -1,38 +1,44 @@
 # Material 3 Typography System & Type Scale Specifications
 
-Based on official [Material 3 Typography Overview](https://m3.material.io/styles/typography/overview).
+Based on official [Material 3 Typography Overview](https://m3.material.io/styles/typography/overview), [Fonts](https://m3.material.io/styles/typography/fonts), and [Type Scale Tokens](https://m3.material.io/styles/typography/type-scale-tokens).
 
-## ✏️ 1. Typography Principles
+## ✏️ 1. Typography Principles & Font Families
 
 1. **Hierarchy & Clarity**: Typography establishes visual structure, directing the user's focus through distinct size, weight, and line height contrast.
-2. **Variable Type Axes**: Material 3 typography leverages variable font axes (`wght`, `wdth`, `opsz`) for crisp optical rendering across small watch screens up to large foldable tablets.
-3. **The 5 Scale Families**: Divided into 5 key categories (**Display**, **Headline**, **Title**, **Body**, **Label**), with 3 size variants each (**Large**, **Medium**, **Small**) for a total of 15 standard type roles.
+2. **Font Family Selection**:
+   * **Primary Display & Text**: `Roboto` / `Roboto Flex` / `Google Sans` (for primary UI, track titles, album names).
+   * **Monospace Quality & Tech Text**: `Roboto Mono` / `Google Sans Mono` (for track duration timestamps, audio sample rates, FLAC/DSD bitrates, EQ Hz values).
+3. **Variable Type Axes**: Material 3 variable fonts use 4 key variable axes:
+   - `wght` (Weight): $100 \to 900$ (Regular = 400, Medium = 500, SemiBold = 600, Bold = 700).
+   - `wdth` (Width): $75\% \to 125\%$ (Condensed to Expanded).
+   - `opsz` (Optical Size): Auto-calibrates stroke thickness for small captions vs. large display headers.
+   - `GRAD` (Grade): Adjusts optical weight without altering layout width.
 
 ---
 
-## 📊 2. Complete M3 15-Role Typography Token Scale
+## 📊 2. Complete M3 15-Role Type Scale Token Table
 
-| Type Role | Font Size (sp) | Line Height (sp) | Weight | Primary Usage |
-|:---|:---|:---|:---|:---|
-| `displayLarge` | **57 sp** | **64 sp** | Regular | Hero stats, key visual numbers |
-| `displayMedium` | **45 sp** | **52 sp** | Regular | Primary display headers |
-| `displaySmall` | **36 sp** | **44 sp** | Regular | Large section display titles |
-| `headlineLarge` | **32 sp** | **40 sp** | Bold | Full-screen player track title |
-| `headlineMedium` | **28 sp** | **36 sp** | SemiBold | Major section headers |
-| `headlineSmall` | **24 sp** | **32 sp** | SemiBold | Modal & dialog titles |
-| `titleLarge` | **22 sp** | **28 sp** | Medium | Top app bar titles |
-| `titleMedium` | **16 sp** | **24 sp** | Medium | Card titles, list headers |
-| `titleSmall` | **14 sp** | **20 sp** | Medium | Subheaders, chip labels |
-| `bodyLarge` | **16 sp** | **24 sp** | Regular | Primary body text, synced lyrics lines |
-| `bodyMedium` | **14 sp** | **20 sp** | Regular | Secondary description text, supporting text |
-| `bodySmall` | **12 sp** | **16 sp** | Regular | Captions, timestamps, metadata |
-| `labelLarge` | **14 sp** | **20 sp** | Medium | Button labels, active tab text |
-| `labelMedium` | **12 sp** | **16 sp** | Medium | Badges, quality tags (FLAC/24-bit) |
-| `labelSmall` | **11 sp** | **16 sp** | Medium | Micro badges, secondary quality indicators |
+| Type Role | Font Size (sp) | Line Height (sp) | Tracking / Letter Spacing | Weight | Primary Usage |
+|:---|:---|:---|:---|:---|:---|
+| `displayLarge` | **57 sp** | **64 sp** | `-0.25 sp` | Regular (400) | Hero stats, key visual numbers |
+| `displayMedium` | **45 sp** | **52 sp** | `0.0 sp` | Regular (400) | Primary display headers |
+| `displaySmall` | **36 sp** | **44 sp** | `0.0 sp` | Regular (400) | Large section display titles |
+| `headlineLarge` | **32 sp** | **40 sp** | `0.0 sp` | Bold (700) | Full-screen player track title |
+| `headlineMedium` | **28 sp** | **36 sp** | `0.0 sp` | SemiBold (600) | Major section headers |
+| `headlineSmall` | **24 sp** | **32 sp** | `0.0 sp` | SemiBold (600) | Modal & dialog titles |
+| `titleLarge` | **22 sp** | **28 sp** | `0.0 sp` | Medium (500) | Top app bar titles |
+| `titleMedium` | **16 sp** | **24 sp** | `+0.15 sp` | Medium (500) | Card titles, list headers |
+| `titleSmall` | **14 sp** | **20 sp** | `+0.1 sp` | Medium (500) | Subheaders, chip labels |
+| `bodyLarge` | **16 sp** | **24 sp** | `+0.5 sp` | Regular (400) | Primary body text, synced lyrics lines |
+| `bodyMedium` | **14 sp** | **20 sp** | `+0.25 sp` | Regular (400) | Secondary description text, supporting text |
+| `bodySmall` | **12 sp** | **16 sp** | `+0.4 sp` | Regular (400) | Captions, timestamps, metadata |
+| `labelLarge` | **14 sp** | **20 sp** | `+0.1 sp` | Medium (500) | Button labels, active tab text |
+| `labelMedium` | **12 sp** | **16 sp** | `+0.5 sp` | Medium (500) | Badges, quality tags (FLAC/24-bit) |
+| `labelSmall` | **11 sp** | **16 sp** | `+0.5 sp` | Medium (500) | Micro badges, secondary quality indicators |
 
 ---
 
-## 🛠️ 3. Jetpack Compose Typography Implementation
+## 🛠️ 3. Jetpack Compose Typography Token Implementation
 
 ```kotlin
 import androidx.compose.material3.Typography
@@ -46,31 +52,50 @@ val M3Typography = Typography(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
         fontSize = 57.sp,
-        lineHeight = 64.sp
+        lineHeight = 64.sp,
+        letterSpacing = (-0.25).sp
     ),
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
-        lineHeight = 40.sp
+        lineHeight = 40.sp,
+        letterSpacing = 0.sp
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
         fontSize = 22.sp,
-        lineHeight = 28.sp
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp
+    ),
+    titleMedium = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.15.sp
     ),
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
-        lineHeight = 24.sp
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
     ),
     labelLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
-        lineHeight = 20.sp
+        lineHeight = 20.sp,
+        letterSpacing = 0.1.sp
+    ),
+    labelMedium = TextStyle(
+        fontFamily = FontFamily.Monospace, // Monospace for audio technical tags
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
     )
 )
 ```
