@@ -43,20 +43,54 @@ FilledTonalIconButton(
 ### D. Segmented Buttons (Audio EQ Presets)
 Used for mutually exclusive or multi-select option rows:
 
+### E. Button Groups (Connected vs. Separated Group Specifications)
+
+Based on official [Material 3 Button Groups Overview](https://m3.material.io/components/button-groups/overview), [Specs](https://m3.material.io/components/button-groups/specs), [Guidelines](https://m3.material.io/components/button-groups/guidelines), and [Accessibility](https://m3.material.io/components/button-groups/accessibility).
+
+| Group Type | Inner Edge Styling | Gap | Primary Usage |
+|:---|:---|:---|:---|
+| **Connected Group** | Shared inner edges (`SegmentedButtonDefaults.itemShape`) | 0 dp | Mutually exclusive presets (EQ Flat / Rock / Jazz / Bass) |
+| **Separated Group** | Full individual corner radii ($9999\text{dp}$ / $12\text{dp}$) | 8 dp (`Small`) | Media Player Control Bar (Prev · Play · Next · Shuffle) |
+
 ```kotlin
-// Segmented Button Row for Audio EQ Presets
-SingleChoiceSegmentedButtonRow {
-    EqPreset.entries.forEachIndexed { index, preset ->
-        SegmentedButton(
-            selected = currentPreset == preset,
-            onClick = { onSelectPreset(preset) },
-            shape = SegmentedButtonDefaults.itemShape(index = index, count = EqPreset.entries.size)
-        ) {
-            Text(preset.displayName, style = MaterialTheme.typography.labelMedium)
-        }
+// Separated Media Control Button Group
+Row(
+    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+    verticalAlignment = Alignment.CenterVertically,
+    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+) {
+    IconButton(onClick = onShuffle, modifier = Modifier.size(48.dp)) {
+        Icon(Icons.Default.Shuffle, contentDescription = "Shuffle")
+    }
+    IconButton(onClick = onPrevious, modifier = Modifier.size(48.dp)) {
+        Icon(Icons.Default.SkipPrevious, contentDescription = "Previous Track")
+    }
+    // Hero Central Large Play/Pause FAB (96dp x 96dp)
+    LargeFloatingActionButton(
+        onClick = onPlayPause,
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = Modifier.size(96.dp)
+    ) {
+        Icon(
+            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+            contentDescription = if (isPlaying) "Pause" else "Play",
+            modifier = Modifier.size(48.dp)
+        )
+    }
+    IconButton(onClick = onNext, modifier = Modifier.size(48.dp)) {
+        Icon(Icons.Default.SkipNext, contentDescription = "Next Track")
+    }
+    IconButton(onClick = onRepeat, modifier = Modifier.size(48.dp)) {
+        Icon(Icons.Default.Repeat, contentDescription = "Repeat Mode")
     }
 }
 ```
+
+#### Button Group Accessibility Standards
+* **Group Context**: Screen readers must announce the selected option and total item count (e.g. `"Equalizer Presets, Rock selected, 2 of 5"`).
+* **Touch Target**: Every button in a group must enforce a minimum **$48\text{dp} \times 48\text{dp}$** touch box.
+
 
 
 ## 🃏 2. Card Containers
