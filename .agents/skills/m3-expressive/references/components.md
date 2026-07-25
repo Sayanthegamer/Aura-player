@@ -761,9 +761,65 @@ fun TrackReleaseDatePickerDialog(
 }
 ```
 
+## ⏰ 13. Time Pickers Specifications (Sleep Timer Dial & Text Input)
+
+Based on official Material 3 Time Pickers Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/time-pickers/*`).
+
+### A. Time Picker Variant Matrix
+
+| Variant Name | Container Token | Corner Radius | Primary Usage |
+|:---|:---|:---|:---|
+| **Dial TimePicker** | `surfaceContainerHigh` (Level 3 / $6\text{dp}$) | **28 dp** (`extraLarge`) | **Sleep Timer clock dial dialog** (Set playback stop time) |
+| **Input TimePicker** | `surfaceContainerHigh` (Level 3 / $6\text{dp}$) | **28 dp** (`extraLarge`) | Direct text input for exact hours/minutes |
+
+### B. Selection Selector & Dial Tokens
+* **Container Corner Radius**: **28 dp** (`shape.extraLarge`).
+* **Hour / Minute Display Box (Selected)**: `primaryContainer` + `onPrimaryContainer` text.
+* **Hour / Minute Display Box (Unselected)**: `surfaceContainerHighest` + `onSurface` text.
+* **Clock Dial Diameter**: **256 dp** circular dial face (`tertiary` center pivot pin).
+
+### C. Compose Sleep Timer TimePickerDialog Pattern
+
+```kotlin
+// Sleep Timer Dialog using M3 TimePicker
+@Composable
+fun SleepTimerPickerDialog(
+    onTimeSelected: (Int, Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val timePickerState = rememberTimePickerState(is24Hour = false)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                onTimeSelected(timePickerState.hour, timePickerState.minute)
+                onDismiss()
+            }) {
+                Text("Start Timer", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        title = {
+            Text("Set Sleep Timer", style = MaterialTheme.typography.titleLarge)
+        },
+        text = {
+            TimePicker(state = timePickerState)
+        },
+        shape = RoundedCornerShape(28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    )
+}
+```
+
 ### D. Accessibility
-* **Grid Traversal**: Calendar grid supports full D-pad / keyboard arrow key traversal.
-* **Date Announcement**: Selected date readout automatically announces full date string to TalkBack (e.g. `"Selected, July 25, 2026"`).
+* **Dial Accessibility**: D-pad navigation moves through clock dial numbers sequentially.
+* **Time Announcement**: TalkBack announces formatted hour/minute selection (e.g. `"11 hours, 30 minutes PM, selected"`).
+
 
 
 
