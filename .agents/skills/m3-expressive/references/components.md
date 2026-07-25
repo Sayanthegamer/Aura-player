@@ -19,14 +19,37 @@ Based on official [Material 3 All Buttons Overview](https://m3.material.io/compo
 * **Shape**: Full Pill (`RoundedCornerShape(9999.dp)`).
 
 
-### B. Floating Action Buttons (FAB Family)
+### B. Floating Action Buttons (FAB Family & Extended FAB)
 
-| FAB Variant | Container Size | Corner Radius | Container Token | Usage |
-|:---|:---|:---|:---|:---|
-| **Small FAB** | **40 dp × 40 dp** | 12 dp | `primaryContainer` | Secondary floating action |
-| **Standard FAB** | **56 dp × 56 dp** | 16 dp | `primaryContainer` | Primary screen action |
-| **Large FAB** | **96 dp × 96 dp** | 28 dp | `primaryContainer` | **Hero Now-Playing central Play/Pause FAB** |
-| **Extended FAB** | **56 dp** Height | Full Pill (9999dp) | `primaryContainer` | Icon + Text label expanding action |
+Based on official [Material 3 Extended FAB Specs](https://m3.material.io/components/extended-fab/specs) and [Guidelines](https://m3.material.io/components/extended-fab/guidelines).
+
+| FAB Variant | Container Dimensions | Corner Radius | Default Elevation | Hover Elevation | Usage |
+|:---|:---|:---|:---|:---|:---|
+| **Small FAB** | **40 dp × 40 dp** | 12 dp | 6 dp | 8 dp | Secondary floating action |
+| **Standard FAB** | **56 dp × 56 dp** | 16 dp | 6 dp | 8 dp | Primary screen floating action |
+| **Large FAB** | **96 dp × 96 dp** | 28 dp | 6 dp | 8 dp | **Hero Now-Playing central Play/Pause FAB** |
+| **Extended FAB** | **56 dp** Height | 16 dp / Pill | 6 dp | 8 dp | Icon + Label expanding action (e.g., "Shuffle All") |
+
+#### Extended FAB Expansion & Scroll-Collapse Pattern
+When user scrolls down a media list, the Extended FAB collapses smoothly to a standard FAB showing only the icon:
+
+```kotlin
+val lazyListState = rememberLazyListState()
+val isExpanded by remember {
+    derivedStateOf { lazyListState.firstVisibleItemIndex == 0 }
+}
+
+ExtendedFloatingActionButton(
+    onClick = onShuffleAll,
+    expanded = isExpanded,
+    icon = { Icon(Icons.Default.Shuffle, contentDescription = null) },
+    text = { Text("Shuffle All", style = MaterialTheme.typography.labelLarge) },
+    containerColor = MaterialTheme.colorScheme.primaryContainer,
+    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
+)
+```
+
 
 ### C. Icon Buttons (Standard, Filled, Tonal, Outlined)
 
