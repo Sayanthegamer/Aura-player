@@ -888,9 +888,38 @@ fun DeletePlaylistConfirmDialog(
 }
 ```
 
+## ➖ 15. Dividers Specifications (Horizontal & Vertical Inset Rules)
+
+Based on official Material 3 Dividers Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/divider/*`).
+
+### A. Divider Variant Matrix
+
+| Variant Name | Orientation | Thickness | Color Token | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **HorizontalDivider** (Full-Width) | Horizontal | **1 dp** | `outlineVariant` | Major section boundaries in settings/libraries |
+| **HorizontalDivider** (Inset) | Horizontal | **1 dp** | `outlineVariant` | Separating track list items (Indented $72\text{dp}$ past artwork) |
+| **VerticalDivider** | Vertical | **1 dp** | `outlineVariant` | Inline media controls, Split button divider line |
+
+### B. Inset Spacing Rules
+* **Start Inset**: Indent start edge by **56 dp – 72 dp** in list views to visually align divider with list item primary text instead of cutting through artwork thumbnails.
+
+### C. Compose Implementation Pattern
+
+```kotlin
+// Inset Horizontal Divider for Track List
+@Composable
+fun TrackListItemDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 72.dp), // Inset past 48dp artwork + 16dp padding + 8dp spacing
+        thickness = 1.dp,
+        color = MaterialTheme.colorScheme.outlineVariant
+    )
+}
+```
+
 ### D. Accessibility
-* **Focus Trapping**: Modal dialog traps D-pad & keyboard focus within dialog buttons while open.
-* **Dismiss Semantics**: Pressing `Back` hardware key or tapping background scrim dismisses dialog safely.
+* **Decorative Semantics**: Dividers are purely visual grouping elements and are automatically hidden from screen reader accessibility focus trees (`semantics { isTraversalGroup = false }`).
+
 
 
 
