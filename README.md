@@ -30,7 +30,7 @@
 | 🎨 **Dynamic Theming** | Album art palette extraction with smooth animated colour transitions |
 | 🌊 **Brownian Motion BG** | Organic blurred gradient that slowly shifts behind the player |
 | 📝 **Synced Lyrics** | Line-synced + word-level karaoke highlighting (LRCLib + embedded tags) |
-| 🎛️ **Audio DSP** | 5-band parametric EQ, bass boost, treble control |
+| 🎛️ **Audio DSP** | 16-band parametric EQ (31 Hz – 16 kHz), Bass Boost, Treble & Limiter |
 | 🔊 **ReplayGain** | Track/album gain normalisation with anti-clipping protection |
 | 🤖 **Smart Autoplay** | Picks the next track based on genre, BPM, mood, and listening history |
 | 🔀 **Shuffle** | True shuffle with active indicator dot |
@@ -178,11 +178,11 @@ Priority:  Embedded tags  →  LRCLib API  →  Plain text
 
 | Control | Range | Engine |
 |:---|:---|:---|
-| **5-Band EQ** | ±15 dB per band (60 Hz → 14 kHz) | Android `Equalizer` effect |
-| **Bass Boost** | 0 – 1000 strength | Android `BassBoost` effect |
-| **Treble** | 0 – 1000 strength | Android `PresetReverb` / custom |
+| **16-Band EQ** | ±15 dB per band (31 Hz → 16 kHz) | Android `DynamicsProcessing` (or system `Equalizer` fallback) |
+| **Bass Boost** | 0 – 12 dB boost | DynamicsProcessing low-shelf filter |
+| **Treble** | 0 – 12 dB boost | DynamicsProcessing high-shelf filter |
+| **Limiter** | Configurable threshold (dB) | DynamicsProcessing peak limiter |
 | **ReplayGain** | −12 to +12 dB | jaudiotagger tag extraction |
-| **Anti-Clipping** | Configurable LUFS target | Peak limiter with safety ceiling |
 
 ---
 
@@ -207,7 +207,7 @@ app/src/main/java/com/auraplayer/app/
 │   └── AuraTheme.kt              # Material 3 dynamic theme tokens
 │
 ├── 🎛️ audio/
-│   └── AudioDspManager.kt        # EQ, BassBoost, Treble effect wrappers
+│   └── AudioDspManager.kt        # 16-band EQ, BassBoost, Treble & Limiter
 │
 ├── 📝 lyrics/
 │   ├── LrcParser.kt              # LRC + enhanced word-level parser
@@ -248,6 +248,7 @@ app/src/main/java/com/auraplayer/app/
 | **Language** | Kotlin 2.0 |
 | **UI** | Jetpack Compose + Material 3 |
 | **Playback** | Media3 ExoPlayer + MediaSession |
+| **Audio Processing** | Android `DynamicsProcessing` (16-Band EQ + Limiter) |
 | **Database** | Room (SQLite) |
 | **Preferences** | DataStore |
 | **Networking** | Ktor Client (OkHttp engine) |
@@ -274,7 +275,7 @@ app/src/main/java/com/auraplayer/app/
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/Aura-player.git
+git clone https://github.com/Sayanthegamer/Aura-player.git
 cd Aura-player
 
 # Build debug APK
