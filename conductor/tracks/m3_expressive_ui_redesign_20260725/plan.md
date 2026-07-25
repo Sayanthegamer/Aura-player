@@ -14,6 +14,7 @@
 
 
 ## Phase 3: Adaptive Navigation Shell & Global M3 Token Audit
-- [ ] Task: Implement `AuraAdaptiveNavigation` (Bottom `NavigationBar` for portrait, `NavigationRail` for landscape/tablets)
-- [ ] Task: Audit and update all list items (`72dp` 2-line `ListItem`), chips (`FilterChip`), dialogs (`AlertDialog`), and sleep timer pickers (`TimePicker`)
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Implement `AuraAdaptiveNavigation` (Bottom `NavigationBar` for portrait, `NavigationRail` for landscape/tablets)
+- [x] Task: Audit and update all list items (`72dp` 2-line `ListItem`), chips (`FilterChip`), dialogs (`AlertDialog`), and sleep timer pickers (`TimePicker`)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+
