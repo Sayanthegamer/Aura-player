@@ -1243,6 +1243,91 @@ fun AudioQualityRadioGroup(
 ### D. Accessibility
 * **Group Context**: Wrap radio button rows inside `Modifier.selectableGroup()` so TalkBack announces radio index and total options (e.g. `"Lossless FLAC, selected, radio button 1 of 3"`).
 
+---
+
+## 🔍 20. Search Specifications (SearchBar & Full-Screen Expanded Search)
+
+Based on official Material 3 Search Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/search/*`).
+
+### A. Search Component Variant Matrix
+
+| Search Variant | Container Height (Collapsed) | Container Token (Collapsed) | Corner Radius | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **SearchBar** (Morphing) | **56 dp** | `surfaceContainerHigh` | **28 dp** (Pill) | **Library Search Bar** (Morps to full-screen results on focus) |
+| **DockedSearchBar** | **56 dp** | `surfaceContainerHigh` | **28 dp** (Pill) | Desktop / Tablet docked search window |
+
+### B. Structural & State Morphing Tokens
+* **Collapsed Search Bar**: $56\text{dp}$ height pill in `surfaceContainerHigh` ($6\text{dp}$ tonal elevation).
+* **Leading Icon Transition**: `Icons.Default.Search` (Collapsed) $\to$ `Icons.AutoMirrored.Filled.ArrowBack` (Expanded).
+* **Trailing Actions**: Clear search query button (`Icons.Default.Clear`) + Voice Search icon.
+* **Expanded Results View**: Smooth container transform expansion to 100% screen height over background content.
+
+### C. Compose SearchBar Pattern
+
+```kotlin
+// Collapsible Full-Screen Library SearchBar
+@Composable
+fun LibrarySearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    searchResults: List<Track>,
+    onSelectTrack: (Track) -> Unit
+) {
+    var isSearchActive by remember { mutableStateOf(false) }
+
+    SearchBar(
+        query = query,
+        onQueryChange = onQueryChange,
+        onSearch = { isSearchActive = false },
+        active = isSearchActive,
+        onActiveChange = { isSearchActive = it },
+        placeholder = { Text("Search tracks, albums, artists...", style = MaterialTheme.typography.bodyLarge) },
+        leadingIcon = {
+            if (isSearchActive) {
+                IconButton(onClick = { isSearchActive = false }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close Search")
+                }
+            } else {
+                Icon(Icons.Default.Search, contentDescription = "Search Library")
+            }
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Default.Clear, contentDescription = "Clear query")
+                }
+            }
+        },
+        shape = RoundedCornerShape(28.dp),
+        colors = SearchBarDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = if (isSearchActive) 0.dp else 16.dp)
+    ) {
+        // Expanded Search Results List
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(searchResults) { track ->
+                ListItem(
+                    headlineContent = { Text(track.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    supportingContent = { Text(track.artist, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    leadingContent = {
+                        AsyncImage(model = track.artUri, contentDescription = null, modifier = Modifier.size(40.dp).clip(RoundedCornerShape(6.dp)))
+                    },
+                    modifier = Modifier.clickable {
+                        onSelectTrack(track)
+                        isSearchActive = false
+                    }
+                )
+            }
+        }
+    }
+}
+```
+
+### D. Accessibility
+* **Live Results Announcement**: Screen readers announce result count changes as user types (e.g. `"5 tracks found for query Daft Punk"`).
+
+
 
 
 
