@@ -247,6 +247,55 @@ Row(
 * **Group Context**: Screen readers must announce the selected option and total item count (e.g. `"Equalizer Presets, Rock selected, 2 of 5"`).
 * **Touch Target**: Every button in a group must enforce a minimum **$48\text{dp} \times 48\text{dp}$** touch box.
 
+### F. Split Buttons (Dual-Action Button Specifications)
+
+Based on official [Material 3 Split Button Specs](https://m3.material.io/components/split-button/specs) and [Guidelines](https://m3.material.io/components/split-button/guidelines).
+
+Combines a primary direct action with a secondary dropdown menu in a unified container (e.g., "Play Now" + "▼" options for Add to Queue / Play Next):
+
+| Split Button Component | Position | Container Token | Function |
+|:---|:---|:---|:---|
+| **Primary Action Button** | Left | `primary` / `secondaryContainer` | Immediate primary action ("Play Now") |
+| **Divider Line** | Center | $1\text{dp}$ `outlineVariant` | Visual separation |
+| **Trailing Menu Button** | Right | `primary` / `secondaryContainer` | Triggers options menu (Add to Queue, Play Next) |
+
+```kotlin
+// Split Button Compose Implementation
+Row(
+    verticalAlignment = Alignment.CenterVertically,
+    modifier = Modifier.height(40.dp).clip(RoundedCornerShape(9999.dp))
+) {
+    // Primary Action
+    Surface(
+        onClick = onPlayNow,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.weight(1f).fillMaxHeight()
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Play Now", style = MaterialTheme.typography.labelLarge)
+        }
+    }
+    // 1dp Vertical Divider Line
+    Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)))
+    // Trailing Menu Button
+    Surface(
+        onClick = onOpenMenu,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.fillMaxHeight().width(40.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.ArrowDropDown, contentDescription = "More Play Options")
+        }
+    }
+}
+```
+
+
 
 
 ## 🃏 2. Card Containers
