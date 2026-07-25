@@ -298,35 +298,64 @@ Row(
 
 
 
-## 🃏 2. Card Containers
+## 🃏 2. Card Containers Specifications
+
+Based on official [Material 3 Cards Overview](https://m3.material.io/components/cards/overview), [Specs](https://m3.material.io/components/cards/specs), [Guidelines](https://m3.material.io/components/cards/guidelines), and [Accessibility](https://m3.material.io/components/cards/accessibility).
+
+### A. The 3 Card Variants
+
+| Card Variant | Container Token | Border Stroke | Default Elevation | Dragged / Pressed Elevation | Primary Usage |
+|:---|:---|:---|:---|:---|:---|
+| **Elevated Card** | `surfaceContainerLow` | None | **1 dp** | **6 dp** | Highlighted active media card, Now Playing summary |
+| **Filled Card** | `surfaceContainerHighest` | None | **0 dp** | **3 dp** | Standard album grid cards, playlist list items |
+| **Outlined Card** | `surface` | $1\text{dp}$ `outlineVariant` | **0 dp** | **3 dp** | Audio DSP preset cards, equalizer band containers |
+
+### B. Compose Implementations
 
 ```kotlin
-// Filled Card (Default list items)
+// 1. Filled Card (Album Grid Item)
 Card(
+    colors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+    ),
+    shape = RoundedCornerShape(12.dp),
+    modifier = Modifier.fillMaxWidth()
+) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        AsyncImage(
+            model = album.artUri,
+            contentDescription = null,
+            modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(8.dp)) // Concentric 12dp - 4dp = 8dp
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(album.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(album.artist, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+// 2. Elevated Interactive Card (Active Playing Track)
+Card(
+    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp, pressedElevation = 6.dp),
     colors = CardDefaults.cardColors(
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     ),
-    shape = RoundedCornerShape(12.dp)
-)
-
-// Elevated Card (Highlighted items, active media)
-Card(
-    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-    colors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
-    ),
     shape = RoundedCornerShape(16.dp)
-)
+) {
+    // Active track details
+}
 
-// Outlined Card (Selected presets / settings)
+// 3. Outlined Card (DSP Preset Container)
 OutlinedCard(
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     colors = CardDefaults.cardColors(
         containerColor = MaterialTheme.colorScheme.surface
     ),
     shape = RoundedCornerShape(16.dp)
-)
+) {
+    // DSP Preset controls
+}
 ```
+
 
 ---
 
