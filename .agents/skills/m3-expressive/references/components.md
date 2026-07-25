@@ -1177,6 +1177,73 @@ fun AuraAdaptiveNavigation(
 * **Active Destination Announcement**: TalkBack automatically announces selected navigation destination (e.g. `"Tracks, Selected, Tab 1 of 4"`).
 * **Target Box**: Every navigation item enforces a $48\text{dp} \times 48\text{dp}$ touch target area.
 
+---
+
+## 🔘 19. Radio Buttons Specifications (Mutually Exclusive Settings)
+
+Based on official Material 3 Radio Button Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/radio-button/*`).
+
+### A. Radio Button State Matrix
+
+| Radio State | Outer Ring Token | Inner Dot Token | Primary Usage |
+|:---|:---|:---|:---|
+| **Selected** | $2\text{dp}$ `primary` stroke | $10\text{dp}$ `primary` solid dot | Active Audio Quality selection (Lossless FLAC) |
+| **Unselected** | $2\text{dp}$ `onSurfaceVariant` stroke | Transparent (empty) | Inactive quality options (AAC / MP3) |
+
+### B. Dimensions & Touch Target
+* **Visual Outer Ring Diameter**: **20 dp**
+* **Visual Inner Dot Diameter**: **10 dp**
+* **Touch Target Area**: Minimum **$48\text{dp} \times 48\text{dp}$** touch target boundary.
+
+### C. Compose SelectableGroup Pattern
+
+```kotlin
+// Mutually Exclusive Audio Streaming Quality Selector
+@Composable
+fun AudioQualityRadioGroup(
+    selectedQuality: String,
+    onSelectQuality: (String) -> Unit
+) {
+    val options = listOf("Lossless FLAC (24-bit / 96kHz)", "High Quality AAC (320 kbps)", "Standard MP3 (128 kbps)")
+
+    Column(modifier = Modifier.fillMaxWidth().selectableGroup()) {
+        options.forEach { option ->
+            val isSelected = option == selectedQuality
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = isSelected,
+                        onClick = { onSelectQuality(option) },
+                        role = Role.RadioButton
+                    )
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                RadioButton(
+                    selected = isSelected,
+                    onClick = null, // Handled by row selectable modifier
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = MaterialTheme.colorScheme.primary,
+                        unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = option,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+```
+
+### D. Accessibility
+* **Group Context**: Wrap radio button rows inside `Modifier.selectableGroup()` so TalkBack announces radio index and total options (e.g. `"Lossless FLAC, selected, radio button 1 of 3"`).
+
+
 
 
 
