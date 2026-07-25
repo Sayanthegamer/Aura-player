@@ -134,8 +134,70 @@ ListItem(
             Icon(Icons.Default.MoreVert, contentDescription = "More")
         }
     },
-    colors = ListItemDefaults.colors(
-        containerColor = Color.Transparent
-    )
-)
+## 🏛️ 7. App Bars (Top & Bottom App Bar Specifications)
+
+Based on official [Material 3 App Bars Overview](https://m3.material.io/components/app-bars/overview), [Specs](https://m3.material.io/components/app-bars/specs), [Guidelines](https://m3.material.io/components/app-bars/guidelines), and [Accessibility](https://m3.material.io/components/app-bars/accessibility).
+
+### A. Top App Bar Variant Matrix
+
+| Variant Name | Container Height | Title Alignment | Title Typography | Primary Usage |
+|:---|:---|:---|:---|:---|
+| `CenterAlignedTopAppBar` | **64 dp** | Center | `titleLarge` ($22\text{sp}$) | Main player header, track details |
+| `TopAppBar` (Small) | **64 dp** | Start (Left) | `titleLarge` ($22\text{sp}$) | Standard sub-screens (Settings, EQ) |
+| `MediumTopAppBar` | **112 dp** (Expanded) | Start (Bottom) | `headlineMedium` ($28\text{sp}$) | Genre / Playlist headers |
+| `LargeTopAppBar` | **152 dp** (Expanded) | Start (Bottom) | `headlineLarge` ($32\text{sp}$) | Album / Artist Hero spotlight headers |
+
+### B. Scroll Behavior & Elevation
+* **Unscrolled State**: Container color uses `surface` ($0\text{dp}$ elevation).
+* **Scrolled State**: Container transitions dynamically to `surfaceContainerLow` ($1\text{dp}$ elevation) with `onSurface` content tinting.
+* **Scroll Connection**: Pair with `TopAppBarDefaults.enterAlwaysScrollBehavior()` or `exitUntilCollapsedScrollBehavior()`.
+
+```kotlin
+// Large Collapsing Top App Bar for Album Detail View
+val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+Scaffold(
+    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+    topBar = {
+        LargeTopAppBar(
+            title = {
+                Text(
+                    text = album.name,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
+            navigationIcon = {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
+            },
+            actions = {
+                IconButton(onClick = onSearch) {
+                    Icon(Icons.Default.Search, contentDescription = "Search Album")
+                }
+                IconButton(onClick = onMenu) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "Options")
+                }
+            },
+            scrollBehavior = scrollBehavior,
+            colors = TopAppBarDefaults.largeTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            )
+        )
+    }
+) { innerPadding ->
+    // Scrollable Album Content
+}
 ```
+
+### C. Bottom App Bar Spec
+* **Container Height**: **80 dp**
+* **Container Color**: `surfaceContainer` (Level 2 Elevation / $3\text{dp}$)
+* **Action Slots**: Leading action icons + embedded or end-aligned FAB (Play / Pause or Shuffle).
+
+### D. Accessibility Standards
+* **Action Target Box**: Every action and navigation icon in the app bar must maintain a minimum touch target area of **$48\text{dp} \times 48\text{dp}$**.
+* **Icon Labels**: All app bar icon buttons must provide localized, descriptive `contentDescription` strings for screen readers.
+
