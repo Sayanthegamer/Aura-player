@@ -12,6 +12,7 @@ This skill provides full-spectrum guidelines based on official [Material Design 
 Detailed specifications are organized into focused reference guides:
 
 * 🎨 **[Foundations & Primitives](references/foundations.md)**: HCT Color Space, 5-Tier Surface Container Roles, Shape Scale, Typography Scale (15 Roles), Motion Physics & Accessibility.
+* ✏️ **[Typography System](references/typography.md)**: 15-Role Token Scale (Display, Headline, Title, Body, Label), Line Height Ratios, Compose `Typography` Specs, and Truncation Safety.
 * 🌈 **[Color System & HCT Architecture](references/color.md)**: HCT (Hue, Chroma, Tone) Model, 5 Tonal Palettes (T0–T100), Complete Token Mapping, Surface Container Family, Fixed Tokens, and Algorithmic Contrast Guarantees.
 * 🏔️ **[Elevation & Tonal Surfaces](references/elevation.md)**: The 6-Level Elevation Scale (0dp to 12dp), Tonal Overlays, Press State Shifts, and Scrim Rules.
 * 📐 **[Shape Scale & Radii Specs](references/shape.md)**: The 7-Level Corner Radius Scale (0dp to Full), Concentric Radius Math, Asymmetric Corners, and Shape Morphing.
