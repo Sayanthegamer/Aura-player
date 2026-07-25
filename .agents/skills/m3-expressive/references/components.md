@@ -553,7 +553,60 @@ BadgedBox(
 }
 ```
 
-### D. Accessibility
-* **Screen Reader Announcement**: Always merge the badge's numeric count into the parent icon's `contentDescription` (e.g. `"Queue, 12 items"`) so TalkBack announces the combined state.
+## 🎠 9. Carousel (Multi-Browse Hero Carousel Specifications)
+
+Based on official [Material 3 Carousel Overview](https://m3.material.io/components/carousel/overview), [Specs](https://m3.material.io/components/carousel/specs), [Guidelines](https://m3.material.io/components/carousel/guidelines), and [Accessibility](https://m3.material.io/components/carousel/accessibility).
+
+### A. Carousel Layout Variants
+
+| Carousel Variant | Focal Item Width | Edge Item Preview | Corner Radius | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **Multi-Browse Carousel** | **70–80%** of screen width | Medium (15%) + Small (5%) edge preview | **28 dp** (`extraLarge`) | **Hero Album Artwork swipeable carousel** |
+| **Un-contained Carousel** | Fixed width (e.g. 160dp) | Fully visible overflowing list | **16 dp** (`large`) | Recently played albums row |
+| **Hero Carousel** | **100%** of screen width | None | **28 dp** (`extraLarge`) | Full-screen media spotlight |
+
+### B. Compose Morphing Pager Pattern
+
+```kotlin
+// Multi-Browse Hero Album Artwork Carousel
+val pagerState = rememberPagerState(pageCount = { albums.size })
+
+HorizontalPager(
+    state = pagerState,
+    contentPadding = PaddingValues(horizontal = 32.dp),
+    pageSpacing = 16.dp,
+    modifier = Modifier.fillMaxWidth().height(320.dp)
+) { page ->
+    val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).absoluteValue
+
+    // Dynamic scale & alpha interpolation based on scroll distance from focal center
+    val scale = lerp(0.85f, 1.0f, 1f - pageOffset.coerceIn(0f, 1f))
+    val alpha = lerp(0.5f, 1.0f, 1f - pageOffset.coerceIn(0f, 1f))
+    val cornerRadius = lerp(16.dp, 28.dp, 1f - pageOffset.coerceIn(0f, 1f))
+
+    Card(
+        shape = RoundedCornerShape(cornerRadius),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        modifier = Modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                this.alpha = alpha
+            }
+            .fillMaxSize()
+    ) {
+        AsyncImage(
+            model = albums[page].artUri,
+            contentDescription = albums[page].title,
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+```
+
+### C. Accessibility
+* **Focus Traversal**: Screen reader focus snaps to the active focal item in center.
+* **Announcement**: Page changes announce track title, artist, and item count (e.g. `"Album 2 of 10: Random Access Memories by Daft Punk"`).
+
 
 
