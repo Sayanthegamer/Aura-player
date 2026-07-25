@@ -1555,6 +1555,76 @@ fun DspFeatureSwitchRow(
 ### D. Accessibility
 * **Merged Row Semantics**: Entire setting row is wrapped with `Modifier.toggleable(role = Role.Switch)` so TalkBack reads: `"16-Band Equalizer, On, double tap to toggle"`.
 
+---
+
+## 📑 23. Tabs Specifications (Primary & Secondary Tab Rows)
+
+Based on official Material 3 Tabs Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/tabs/*`).
+
+### A. Tab Variant Matrix
+
+| Tab Variant | Container Height | Active Indicator | Active Color | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **Primary TabRow** (Fixed) | **48 dp** (Text) / **64 dp** (Icon+Text) | **3 dp** Underline Pill | `primary` | **Main Library Navigation** (Tracks, Albums, Artists) |
+| **ScrollableTabRow** | **48 dp** | **3 dp** Underline Pill | `primary` | 5+ Library Tabs (Tracks, Albums, Artists, Playlists, Genres, Folders) |
+| **Secondary TabRow** | **48 dp** | $2\text{dp}$ Bottom Stroke | `onSurface` | Sub-screen sections (Equalizer Presets vs Custom Sliders) |
+
+### B. Dimensions & Active Indicator Tokens
+* **Container Height**: **48 dp** (Text only) or **64 dp** (Icon above Text).
+* **Active Underline Indicator**: **3 dp** thickness with top-rounded corners ($3\text{dp}$ radius).
+* **Selected Text Token**: `primary` color with `titleMedium` ($16\text{sp}$) bold weight.
+* **Unselected Text Token**: `onSurfaceVariant` color with `titleMedium` medium weight.
+
+### C. Compose ScrollableTabRow Pattern
+
+```kotlin
+// Main Music Library Scrollable Tab Row
+@Composable
+fun LibraryTabRow(
+    selectedTabIndex: Int,
+    tabs: List<String>,
+    onTabSelected: (Int) -> Unit
+) {
+    ScrollableTabRow(
+        selectedTabIndex = selectedTabIndex,
+        edgePadding = 16.dp,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.primary,
+        indicator = { tabPositions ->
+            TabRowDefaults.SecondaryIndicator(
+                modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                height = 3.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
+        },
+        divider = {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        }
+    ) {
+        tabs.forEachIndexed { index, title ->
+            val selected = selectedTabIndex == index
+            Tab(
+                selected = selected,
+                onClick = { onTabSelected(index) },
+                text = {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            )
+        }
+    }
+}
+```
+
+### D. Accessibility
+* **Tab Traversal & Selection**: TalkBack announces tab index and selection state (e.g. `"Albums, Selected, Tab 2 of 6"`).
+* **Swipe Connection**: Synchronize tab state with `HorizontalPager` so swiping pages updates active tab indicator smoothly.
+
+
 
 
 
