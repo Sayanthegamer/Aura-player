@@ -120,22 +120,38 @@ Box(modifier = Modifier.fillMaxSize()) {
 
 ### C. Icon Buttons (Standard, Filled, Tonal, Outlined)
 
+Based on official [Material 3 Icon Buttons Specs](https://m3.material.io/components/icon-buttons/specs) and [Guidelines](https://m3.material.io/components/icon-buttons/guidelines).
+
+| Icon Button Variant | Container Token | Content Token | Corner Shape | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **Standard IconButton** | Transparent | `onSurfaceVariant` / `primary` | Circle (`9999.dp`) | App bar actions, inline list item actions |
+| **FilledIconButton** | `primary` | `onPrimary` | Circle (`9999.dp`) | High-emphasis action / toggle |
+| **FilledTonalIconButton** | `secondaryContainer` | `onSecondaryContainer` | Circle (`9999.dp`) | Medium-emphasis media control toggles (Shuffle / Repeat) |
+| **OutlinedIconButton** | Transparent + `outline` stroke | `onSurface` | Circle (`9999.dp`) | Bordered secondary toggles |
+
+#### Icon Button Dimension & Touch Target Specs
+* **Container Dimensions**: **40 dp × 40 dp**
+* **Icon Size**: Standard **24 dp × 24 dp**
+* **Touch Target Area**: Minimum **$48\text{dp} \times 48\text{dp}$** touch target boundary.
+
 ```kotlin
-// Filled Tonal Icon Button for Secondary Media Controls
+// Filled Tonal Icon Button for Secondary Media Control Toggles (Shuffle / Repeat)
 FilledTonalIconButton(
-    onClick = onToggleFavorite,
+    onClick = onToggleShuffle,
     colors = IconButtonDefaults.filledTonalIconButtonColors(
-        containerColor = if (isFavorite) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+        containerColor = if (isShuffleActive) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = if (isShuffleActive) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     ),
-    modifier = Modifier.size(48.dp) // Enforces 48dp M3 touch target
+    modifier = Modifier.size(48.dp) // Enforces 48dp M3 touch target boundary
 ) {
     Icon(
-        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-        contentDescription = "Favorite",
-        tint = if (isFavorite) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+        imageVector = Icons.Default.Shuffle,
+        contentDescription = if (isShuffleActive) "Shuffle On" else "Shuffle Off",
+        modifier = Modifier.size(24.dp)
     )
 }
 ```
+
 
 ### D. Segmented Buttons (Audio EQ Presets)
 Used for mutually exclusive or multi-select option rows:
