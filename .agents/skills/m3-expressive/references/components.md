@@ -1685,6 +1685,74 @@ fun PlaylistNameInputField(
 * **Label Reading**: Screen readers announce field label, current text value, and error message state.
 * **IME Actions**: Pair with `KeyboardOptions(imeAction = ImeAction.Done)` to allow IME keyboard dismissal.
 
+---
+
+## 🛠️ 25. Toolbars Specifications (Floating Batch Action Bar)
+
+Based on official Material 3 Toolbars Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/toolbars/*`).
+
+### A. Toolbar Component Matrix
+
+| Component Variant | Height | Container Token | Shape Token | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **Floating Action Toolbar** | **48 dp – 56 dp** | `surfaceContainerHigh` (Level 3 / $6\text{dp}$) | Full Pill (`9999.dp`) | **Multi-Selection Batch Action Bar** (Batch Play, Queue, Delete) |
+
+### B. Dimensions & Elevation Tokens
+* **Container Height**: **56 dp** (or $48\text{dp}$ dense).
+* **Container Shape**: Full Pill (`RoundedCornerShape(9999.dp)`).
+* **Shadow Elevation**: Level 3 Elevation (**6 dp**).
+* **Action Icon Spacing**: **8 dp** gap between $40\text{dp} \times 40\text{dp}$ action icon buttons.
+
+### C. Compose Floating Batch Selection Toolbar Pattern
+
+```kotlin
+// Floating Multi-Selection Batch Toolbar
+@Composable
+fun BatchSelectionToolbar(
+    selectedCount: Int,
+    onBatchPlay: () -> Unit,
+    onBatchAddQueue: () -> Unit,
+    onBatchDelete: () -> Unit,
+    onClearSelection: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(9999.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 6.dp,
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+        ) {
+            IconButton(onClick = onClearSelection) {
+                Icon(Icons.Default.Close, contentDescription = "Clear Selection")
+            }
+            Text(
+                text = "$selectedCount selected",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.width(8.dp))
+            IconButton(onClick = onBatchPlay) {
+                Icon(Icons.Default.PlayArrow, contentDescription = "Play Selected")
+            }
+            IconButton(onClick = onBatchAddQueue) {
+                Icon(Icons.Default.QueueMusic, contentDescription = "Add Selected to Queue")
+            }
+            IconButton(onClick = onBatchDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete Selected", tint = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+```
+
+### D. Accessibility
+* **Traversal Group**: Mark floating toolbar as an accessibility group (`semantics { isTraversalGroup = true }`) so screen readers navigate batch actions sequentially.
+
+
 
 
 
