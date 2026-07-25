@@ -653,8 +653,65 @@ Row(
 }
 ```
 
+## 🏷️ 11. Chips Specifications (Assist, Filter, Input & Suggestion Chips)
+
+Based on official Material 3 Chips Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/chips/*`).
+
+### A. The 4 Chip Variant Matrix
+
+| Chip Variant | Container Token (Unselected) | Container Token (Selected) | Leading Icon | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **FilterChip** | Transparent + $1\text{dp}$ `outline` | `secondaryContainer` | `Icons.Default.Check` (when selected) | Genre filters (Rock, Jazz), Quality tags (FLAC, MP3) |
+| **AssistChip** | Transparent + $1\text{dp}$ `outline` | N/A | Action icon (e.g. `Icons.Default.Folder`) | Quick actions ("Scan Library", "Sync Lyrics") |
+| **SuggestionChip** | `surfaceContainerLow` | N/A | Optional suggestion icon | Smart recommendations ("Recently Played", "Favorites") |
+| **InputChip** | `surfaceContainerHigh` | `primaryContainer` | Trailing `Close` icon | Custom playlist tags, artist filter pills |
+
+### B. Dimensions & Touch Target
+* **Container Height**: **32 dp**
+* **Corner Radius**: **8 dp** (`shape.small`)
+* **Leading / Trailing Icon Size**: **18 dp × 18 dp**
+* **Touch Target Area**: Minimum **$48\text{dp} \times 48\text{dp}$** touch target box boundary.
+
+### C. Compose FilterChip FlowRow Pattern
+
+```kotlin
+// Genre Filter Chip Row with Selected Checkmarks
+@Composable
+fun GenreFilterChipRow(
+    selectedGenre: String?,
+    genres: List<String>,
+    onSelectGenre: (String) -> Unit
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        items(genres) { genre ->
+            val isSelected = selectedGenre == genre
+            FilterChip(
+                selected = isSelected,
+                onClick = { onSelectGenre(genre) },
+                label = { Text(genre, style = MaterialTheme.typography.labelMedium) },
+                leadingIcon = if (isSelected) {
+                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                } else null,
+                shape = RoundedCornerShape(8.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    containerColor = Color.Transparent,
+                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+    }
+}
+```
+
 ### D. Accessibility
-* **Merged Semantics**: Wrap the Checkbox and Label in a parent `Modifier.toggleable(role = Role.Checkbox)` so TalkBack treats the entire row as a single accessible $48\text{dp}$ target.
+* **Selection State Announcement**: `FilterChip` automatically announces its selection state to TalkBack (e.g. `"Rock, selected, Filter Chip"`).
+* **Touch Boundary**: Padded vertically to enforce a $48\text{dp}$ touch target area.
+
 
 
 
