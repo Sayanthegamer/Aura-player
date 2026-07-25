@@ -1012,8 +1012,75 @@ fun LyricsLoadingSpinner() {
 }
 ```
 
-### C. Accessibility
-* **Progress Semantics**: Set `progressBarRangeInfo = ProgressBarRangeInfo(current = progressValue, range = 0f..1f)` on accessibility semantics so TalkBack announces live percent updates (`"Scanning library, 45 percent"`).
+## 📜 17. Menus Specifications (Dropdown & Exposed Dropdown Menus)
+
+Based on official Material 3 Menus Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/menus/*`).
+
+### A. Menu Variant Matrix
+
+| Menu Variant | Container Token | Corner Radius | Elevation | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **DropdownMenu** | `surfaceContainer` | **12 dp** (`medium`) | **3 dp** (Level 2) | **Track Options Menu** ("Add to Playlist", "View Artist") |
+| **ExposedDropdownMenu** | `surfaceContainer` | **12 dp** (`medium`) | **3 dp** (Level 2) | Audio DSP Preset selector, ReplayGain mode picker |
+
+### B. Structural & Item Spacing Tokens
+* **Width Boundaries**: Minimum **112 dp**, Maximum **280 dp** (or full text field width).
+* **Item Height**: **48 dp** minimum height per menu item.
+* **Leading Icon Size**: **24 dp × 24 dp** (`onSurfaceVariant`).
+
+### C. Compose Track Options DropdownMenu Pattern
+
+```kotlin
+// Track Options Contextual Dropdown Menu
+@Composable
+fun TrackOptionsMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onPlayNext: () -> Unit,
+    onAddToPlaylist: () -> Unit,
+    onDelete: () -> Unit
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(12.dp),
+        colors = MenuDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        )
+    ) {
+        DropdownMenuItem(
+            text = { Text("Play Next", style = MaterialTheme.typography.bodyLarge) },
+            leadingIcon = { Icon(Icons.Default.QueuePlayNext, contentDescription = null) },
+            onClick = {
+                onPlayNext()
+                onDismiss()
+            }
+        )
+        DropdownMenuItem(
+            text = { Text("Add to Playlist", style = MaterialTheme.typography.bodyLarge) },
+            leadingIcon = { Icon(Icons.Default.PlaylistAdd, contentDescription = null) },
+            onClick = {
+                onAddToPlaylist()
+                onDismiss()
+            }
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        DropdownMenuItem(
+            text = { Text("Delete Track", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error) },
+            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            onClick = {
+                onDelete()
+                onDismiss()
+            }
+        )
+    }
+}
+```
+
+### D. Accessibility
+* **Menu Traversal**: Arrow keys move focus between menu items sequentially.
+* **Dismiss Semantics**: Pressing `Escape` key or tapping outside dismisses the menu safely.
+
 
 
 
