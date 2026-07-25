@@ -4,13 +4,20 @@ Based on official [Material 3 All Buttons Overview](https://m3.material.io/compo
 
 ### A. The 5 Common Button Variants
 
-| Button Variant | Container Token | Content Token | Elevation | Primary Usage |
-|:---|:---|:---|:---|:---|
-| **FilledButton** | `primary` | `onPrimary` | 0 dp | High-emphasis primary action (Play, Confirm) |
-| **FilledTonalButton** | `secondaryContainer` | `onSecondaryContainer` | 0 dp | Medium-emphasis action (Shuffle All, Add Queue) |
-| **ElevatedButton** | `surfaceContainerLow` | `primary` | 1 dp | Standout action on flat surfaces |
-| **OutlinedButton** | Transparent + `outline` stroke | `primary` | 0 dp | Medium-low emphasis secondary actions |
-| **TextButton** | Transparent | `primary` | 0 dp | Dialog actions, inline text links |
+| Button Variant | Container Token | Content Token | Default Elevation | Hover Elevation | Primary Usage |
+|:---|:---|:---|:---|:---|:---|
+| **FilledButton** | `primary` | `onPrimary` | 0 dp | 1 dp | High-emphasis primary action (Play, Save) |
+| **FilledTonalButton** | `secondaryContainer` | `onSecondaryContainer` | 0 dp | 1 dp | Medium-emphasis action (Shuffle All, Add Queue) |
+| **ElevatedButton** | `surfaceContainerLow` | `primary` | 1 dp | 2 dp | Standout action on flat surfaces |
+| **OutlinedButton** | Transparent + `outline` stroke | `primary` | 0 dp | 0 dp | Medium-low emphasis secondary actions |
+| **TextButton** | Transparent | `primary` | 0 dp | 0 dp | Dialog actions, inline text links |
+
+#### Common Button Layout & Padding Rules
+* **Container Height**: Standard **40 dp** height (touch target box enforced at **$48\text{dp}$**).
+* **Horizontal Padding**: **24 dp** (without icon) or **16 dp** (when containing a leading icon).
+* **Icon-to-Label Gap**: **8 dp** (`M3Spacing.Small`) between leading icon and button label text.
+* **Shape**: Full Pill (`RoundedCornerShape(9999.dp)`).
+
 
 ### B. Floating Action Buttons (FAB Family)
 
