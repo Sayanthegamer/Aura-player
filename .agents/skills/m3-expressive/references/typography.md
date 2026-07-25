@@ -102,7 +102,22 @@ val M3Typography = Typography(
 
 ---
 
-## 📐 4. Text Truncation & Layout Safety
+## 📐 4. Editorial Treatments & Expressive Typography
+
+Based on official [Material 3 Editorial Treatments](https://m3.material.io/styles/typography/editorial-treatments) and [Applying Type](https://m3.material.io/styles/typography/applying-type).
+
+### A. Editorial Hero Headlines
+* **Expressive Scale**: Hero headers (e.g. Now Playing track titles, artist spotlight headers) can scale up to `displayLarge` (57sp) with bold weight (`wght = 700`) and tight tracking (`-0.25sp`).
+* **High Contrast Color Pairing**: Pair hero titles with `onSurface` or `primary` for maximum legibility over dynamic artwork backgrounds.
+
+### B. Inline Metadata Contrast Ratios
+* **Primary Text (Song Title)**: Use `titleMedium` / `headlineSmall` in `onSurface` ($\ge 12:1$ contrast ratio).
+* **Secondary Metadata (Artist / Album)**: Use `bodyMedium` in `onSurfaceVariant` ($\ge 4.5:1$ contrast ratio).
+* **Technical Badges (Codec / Bitrate)**: Use `labelSmall` / `labelMedium` in `onSecondaryContainer` inside elevated containers.
+
+---
+
+## 🛡️ 5. Text Truncation & Layout Safety
 
 In media applications, long track titles or artist names must never break row layouts or push action buttons off-screen:
 
@@ -116,3 +131,4 @@ Text(
     modifier = Modifier.weight(1f) // Ensures text yields remaining space to trailing buttons
 )
 ```
+
