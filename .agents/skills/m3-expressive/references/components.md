@@ -21,14 +21,15 @@ Based on official [Material 3 All Buttons Overview](https://m3.material.io/compo
 
 ### B. Floating Action Buttons (FAB Family & Extended FAB)
 
-Based on official [Material 3 Extended FAB Specs](https://m3.material.io/components/extended-fab/specs) and [Guidelines](https://m3.material.io/components/extended-fab/guidelines).
+Based on official [Material 3 FAB Specs](https://m3.material.io/components/floating-action-button/specs), [Extended FAB Specs](https://m3.material.io/components/extended-fab/specs), and [Guidelines](https://m3.material.io/components/floating-action-button/guidelines).
 
-| FAB Variant | Container Dimensions | Corner Radius | Default Elevation | Hover Elevation | Usage |
-|:---|:---|:---|:---|:---|:---|
-| **Small FAB** | **40 dp × 40 dp** | 12 dp | 6 dp | 8 dp | Secondary floating action |
-| **Standard FAB** | **56 dp × 56 dp** | 16 dp | 6 dp | 8 dp | Primary screen floating action |
-| **Large FAB** | **96 dp × 96 dp** | 28 dp | 6 dp | 8 dp | **Hero Now-Playing central Play/Pause FAB** |
-| **Extended FAB** | **56 dp** Height | 16 dp / Pill | 6 dp | 8 dp | Icon + Label expanding action (e.g., "Shuffle All") |
+| FAB Variant | Container Size | Icon Size | Shape Token | Default Elevation | Hover Elevation | Usage |
+|:---|:---|:---|:---|:---|:---|:---|
+| **Small FAB** | **40 dp × 40 dp** | 24 dp | `medium` (12dp) | 6 dp | 8 dp | Secondary floating action (Touch target box expanded to 48dp) |
+| **Standard FAB** | **56 dp × 56 dp** | 24 dp | `large` (16dp) | 6 dp | 8 dp | Primary screen floating action |
+| **Large FAB** | **96 dp × 96 dp** | 36 / 48 dp | `extraLarge` (28dp) | 6 dp | 8 dp | **Hero Now-Playing central Play/Pause FAB** |
+| **Extended FAB** | **56 dp** Height | 24 dp | 16dp / Pill | 6 dp | 8 dp | Icon + Label expanding action (e.g., "Shuffle All") |
+
 
 #### Extended FAB Expansion & Scroll-Collapse Pattern
 When user scrolls down a media list, the Extended FAB collapses smoothly to a standard FAB showing only the icon:
