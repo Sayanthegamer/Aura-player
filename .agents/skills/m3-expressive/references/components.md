@@ -1440,6 +1440,57 @@ fun LibrarySearchBar(
 ### D. Accessibility
 * **Live Results Announcement**: Screen readers announce result count changes as user types (e.g. `"5 tracks found for query Daft Punk"`).
 
+---
+
+## 🍞 21. Snackbar Specifications (Toast Notifications)
+
+Based on official Material 3 Snackbar Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/snackbar/*`).
+
+### A. Snackbar Component Matrix
+
+| Component | Container Token | Content Token | Action Button Token | Corner Radius | Primary Usage |
+|:---|:---|:---|:---|:---|:---|
+| **Snackbar** | `inverseSurface` | `inverseOnSurface` | `inversePrimary` | **12 dp** (`medium`) | Quick feedback toasts ("Added to Queue", "Lyrics Synced") |
+
+### B. Dimensions & Elevation Tokens
+* **Container Height**: Minimum **48 dp** height.
+* **Tonal Elevation**: Level 3 Elevation (**6 dp**).
+* **Container Shape**: **12 dp** (`shape.medium`) or $4\text{dp}$ (`shape.extraSmall`).
+* **Horizontal Margin**: **16 dp** screen edge margins.
+
+### C. Compose SnackbarHost Pattern
+
+```kotlin
+// Snackbar Host Implementation for Instant Audio Player Notifications
+@Composable
+fun AuraSnackbarHost(snackbarHostState: SnackbarHostState) {
+    SnackbarHost(hostState = snackbarHostState) { snackbarData ->
+        Snackbar(
+            snackbarData = snackbarData,
+            shape = RoundedCornerShape(12.dp),
+            containerColor = MaterialTheme.colorScheme.inverseSurface,
+            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+            actionColor = MaterialTheme.colorScheme.inversePrimary,
+            dismissActionColor = MaterialTheme.colorScheme.inverseOnSurface
+        )
+    }
+}
+
+// Triggering Snackbar Toast in ViewModel / Composable
+// scope.launch {
+//     snackbarHostState.showSnackbar(
+//         message = "Track added to Play Queue",
+//         actionLabel = "UNDO",
+//         duration = SnackbarDuration.Short
+//     )
+// }
+```
+
+### D. Accessibility
+* **Live Region Announcement**: TalkBack immediately reads snackbar toast messages via polite live region semantics.
+* **Display Duration**: Minimum 4–7 seconds display duration ensures users with visual/cognitive impairments have adequate reading time.
+
+
 
 
 
