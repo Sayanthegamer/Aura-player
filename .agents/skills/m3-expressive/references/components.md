@@ -1,17 +1,63 @@
-# Material 3 Component Specifications
+## 🔘 1. Comprehensive Buttons & FAB Suite
 
-## 🔘 1. Buttons & Floating Action Buttons (FAB)
+Based on official [Material 3 All Buttons Overview](https://m3.material.io/components/all-buttons).
 
-| Component | Container Color | Content Color | Corner Radius | Usage |
+### A. The 5 Common Button Variants
+
+| Button Variant | Container Token | Content Token | Elevation | Primary Usage |
 |:---|:---|:---|:---|:---|
-| **FilledButton** | `primary` | `onPrimary` | Full (9999dp) | Primary action (Play, Save, Confirm) |
-| `FilledTonalButton` | `secondaryContainer` | `onSecondaryContainer` | Full (9999dp) | Medium-emphasis actions (Shuffle All) |
-| `OutlinedButton` | Transparent + `outline` stroke | `primary` | Full (9999dp) | Secondary non-destructive actions |
-| `TextButton` | Transparent | `primary` | Full (9999dp) | Dialog actions, inline text links |
-| `FloatingActionButton` | `primaryContainer` | `onPrimaryContainer` | 16dp (Large) | Primary screen action |
-| `SmallFloatingActionButton` | `primaryContainer` | `onPrimaryContainer` | 12dp (Medium) | Secondary floating action |
+| **FilledButton** | `primary` | `onPrimary` | 0 dp | High-emphasis primary action (Play, Confirm) |
+| **FilledTonalButton** | `secondaryContainer` | `onSecondaryContainer` | 0 dp | Medium-emphasis action (Shuffle All, Add Queue) |
+| **ElevatedButton** | `surfaceContainerLow` | `primary` | 1 dp | Standout action on flat surfaces |
+| **OutlinedButton** | Transparent + `outline` stroke | `primary` | 0 dp | Medium-low emphasis secondary actions |
+| **TextButton** | Transparent | `primary` | 0 dp | Dialog actions, inline text links |
 
----
+### B. Floating Action Buttons (FAB Family)
+
+| FAB Variant | Container Size | Corner Radius | Container Token | Usage |
+|:---|:---|:---|:---|:---|
+| **Small FAB** | **40 dp × 40 dp** | 12 dp | `primaryContainer` | Secondary floating action |
+| **Standard FAB** | **56 dp × 56 dp** | 16 dp | `primaryContainer` | Primary screen action |
+| **Large FAB** | **96 dp × 96 dp** | 28 dp | `primaryContainer` | **Hero Now-Playing central Play/Pause FAB** |
+| **Extended FAB** | **56 dp** Height | Full Pill (9999dp) | `primaryContainer` | Icon + Text label expanding action |
+
+### C. Icon Buttons (Standard, Filled, Tonal, Outlined)
+
+```kotlin
+// Filled Tonal Icon Button for Secondary Media Controls
+FilledTonalIconButton(
+    onClick = onToggleFavorite,
+    colors = IconButtonDefaults.filledTonalIconButtonColors(
+        containerColor = if (isFavorite) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh
+    ),
+    modifier = Modifier.size(48.dp) // Enforces 48dp M3 touch target
+) {
+    Icon(
+        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+        contentDescription = "Favorite",
+        tint = if (isFavorite) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+```
+
+### D. Segmented Buttons (Audio EQ Presets)
+Used for mutually exclusive or multi-select option rows:
+
+```kotlin
+// Segmented Button Row for Audio EQ Presets
+SingleChoiceSegmentedButtonRow {
+    EqPreset.entries.forEachIndexed { index, preset ->
+        SegmentedButton(
+            selected = currentPreset == preset,
+            onClick = { onSelectPreset(preset) },
+            shape = SegmentedButtonDefaults.itemShape(index = index, count = EqPreset.entries.size)
+        ) {
+            Text(preset.displayName, style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+```
+
 
 ## 🃏 2. Card Containers
 
