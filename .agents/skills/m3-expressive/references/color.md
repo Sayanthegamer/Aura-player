@@ -302,11 +302,47 @@ Material 3 supports **Dynamic Contrast Levels** configured in system settings:
 
 | Contrast Mode | Target Contrast Delta | Usage / Target Audience |
 |:---|:---|:---|
-| `Standard` | $\Delta\text{Tone} \ge 60$ ($7:1$) | Default balanced aesthetic |
-| `Medium` | $\Delta\text{Tone} \ge 70$ ($10:1$) | Outdoor sunlight visibility & reduced strain |
-| `High` | $\Delta\text{Tone} \ge 85$ ($14:1$) | Maximum accessibility & visual impairment support |
+---
 
-In Jetpack Compose, dynamic contrast levels automatically adjust `ColorScheme` tokens when using `dynamicDarkColorScheme(context)`.
+## 🛠️ 8. Official Material 3 Color Libraries & Tools
+
+Based on official [Material 3 Color Resources](https://m3.material.io/styles/color/resources).
+
+### A. Core Google Libraries & Gradle Dependencies
+
+| Library / Utility | Package Coordinate | Primary Purpose |
+|:---|:---|:---|
+| **Material Color Utilities** | `com.google.android.material:material-color-utilities` | HCT color space conversions, seed scoring algorithms, palette quantization (`QuantizerCelebi`) |
+| **AndroidX Palette** | `androidx.palette:palette-ktx:1.0.0` | Image artwork bitmap color extraction |
+| **Compose Material 3** | `androidx.compose.material3:material3` | Dynamic color scheme APIs (`dynamicDarkColorScheme`), MaterialTheme tokens |
+
+### B. Core HCT & Seed Extraction APIs
+
+```kotlin
+import com.google.android.material.color.utilities.Hct
+import com.google.android.material.color.utilities.QuantizerCelebi
+import com.google.android.material.color.utilities.Score
+import com.google.android.material.color.utilities.SchemeContent
+
+object M3ColorTools {
+
+    // 1. Quantize bitmap pixels and score the best primary seed color
+    fun extractBestSeedColor(pixels: IntArray): Int {
+        val quantizedColors = QuantizerCelebi.quantize(pixels, 128)
+        val rankedSeeds = Score.score(quantizedColors)
+        return rankedSeeds.firstOrNull() ?: 0xFF6750A4.toInt() // Fallback to M3 Purple Baseline
+    }
+
+    // 2. Generate full HCT Content Dynamic Scheme from seed
+    fun createContentScheme(seedArgb: Int, isDark: Boolean): SchemeContent {
+        return SchemeContent(Hct.fromInt(seedArgb), isDark, 0.0)
+    }
+}
+```
+
+### C. Design Tools
+* **Material Theme Builder**: Official Google Figma plugin & web app for generating, previewing, and exporting Material 3 Color Schemes directly into Jetpack Compose code.
+
 
 
 
