@@ -32,9 +32,16 @@ interface TrackDao {
     @Query("UPDATE tracks SET lastPlayedTimestamp = :timestampMs WHERE id = :id")
     suspend fun updateLastPlayed(id: Long, timestampMs: Long)
 
+    @Query("UPDATE tracks SET genre = :genre, moodTags = :moodTags, bpm = :bpm WHERE id IN (:ids)")
+    suspend fun updateTrackTags(ids: List<Long>, genre: String, moodTags: String, bpm: Int)
+
+    @Query("DELETE FROM tracks WHERE id IN (:ids)")
+    suspend fun deleteTracksByIds(ids: List<Long>)
+
     @Query("DELETE FROM tracks")
     suspend fun deleteAllTracks()
 }
+
 
 @Dao
 interface AlbumDao {

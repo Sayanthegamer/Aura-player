@@ -10,6 +10,10 @@
   *Link: [index.md](./archive/phase3_smart_dsp_20260724/index.md)*
 - [x] **Track: Complete Material 3 Expressive UI/UX Redesign**
   *Link: [index.md](./tracks/m3_expressive_ui_redesign_20260725/index.md)*
+- [x] **Track: Personalized Home & Library Manager**
+  *Link: [index.md](./tracks/personalized_home_library_manager_20260725/index.md)*
+
+
 
 
 

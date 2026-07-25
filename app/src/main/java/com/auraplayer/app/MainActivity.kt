@@ -42,6 +42,7 @@ import com.auraplayer.app.repository.LrclibRepository
 import com.auraplayer.app.repository.MusicRepository
 import com.auraplayer.app.ui.AuraTheme
 import com.auraplayer.app.ui.HomeScreen
+import com.auraplayer.app.ui.LibraryManagerScreen
 import com.auraplayer.app.ui.LyricCanvas
 import com.auraplayer.app.ui.MiniPlayer
 import com.auraplayer.app.ui.PlayerScreen
@@ -50,6 +51,7 @@ import kotlinx.coroutines.launch
 
 sealed class Screen {
     object Home : Screen()
+    object LibraryManager : Screen()
     object Settings : Screen()
     object FullPlayer : Screen()
     object Lyrics : Screen()
@@ -97,8 +99,7 @@ class MainActivity : ComponentActivity() {
                 var manualOffsetMs by remember { mutableStateOf(0L) }
                 val coroutineScope = rememberCoroutineScope()
 
-                // ── Palette extraction lives here (once) so PlayerScreen & LyricCanvas
-                //    receive already-animated colors and never flash the default lavender.
+                // Palette extraction
                 val context = androidx.compose.ui.platform.LocalContext.current
                 var rawDominant by remember { mutableStateOf(Color(0xFF1E1B2E)) }
                 var rawAccent   by remember { mutableStateOf(Color(0xFFD0BCFF)) }
@@ -209,14 +210,62 @@ class MainActivity : ComponentActivity() {
                                 ) { innerPadding ->
                                     HomeScreen(
                                         tracks = tracks,
-                                        albums = albums,
                                         artists = artists,
+                                        artistScrobbleCounts = emptyMap(),
+                                        settings = settings,
                                         onTrackSelect = { track, trackList, index ->
                                             playerManager.playTrackList(trackList, index)
                                         },
                                         onOpenSettings = { currentScreen = Screen.Settings },
+                                        onOpenLibraryManager = { currentScreen = Screen.LibraryManager },
                                         onRescanClick = {
                                             lifecycleScope.launch { musicRepository.rescanLibrary(settings.blacklistedFolders) }
+                                        },
+                                        onUpdateRailSettings = { newOrder, newHidden ->
+                                            coroutineScope.launch {
+                                                settingsPreferences.setHomeRailOrder(newOrder)
+                                                settingsPreferences.setHiddenRails(newHidden)
+                                            }
+                                        },
+                                        modifier = Modifier.padding(innerPadding)
+                                    )
+                                }
+                            }
+                            is Screen.LibraryManager -> {
+                                Scaffold(
+                                    bottomBar = {
+                                        MiniPlayer(
+                                            uiState = uiState,
+                                            onPlayPauseToggle = { playerManager.togglePlayPause() },
+                                            onExpandPlayer = { currentScreen = Screen.FullPlayer }
+                                        )
+                                    }
+                                ) { innerPadding ->
+                                    LibraryManagerScreen(
+                                        tracks = tracks,
+                                        blacklistedFolders = settings.blacklistedFolders,
+                                        onBack = { currentScreen = Screen.Home },
+                                        onAddBlacklistedFolder = { folder ->
+                                            coroutineScope.launch {
+                                                settingsPreferences.addBlacklistedFolder(folder)
+                                                musicRepository.rescanLibrary(settings.blacklistedFolders + folder)
+                                            }
+                                        },
+                                        onRemoveBlacklistedFolder = { folder ->
+                                            coroutineScope.launch {
+                                                settingsPreferences.removeBlacklistedFolder(folder)
+                                                musicRepository.rescanLibrary(settings.blacklistedFolders - folder)
+                                            }
+                                        },
+                                        onUpdateTags = { ids, genre, moodTags, bpm ->
+                                            coroutineScope.launch {
+                                                db.trackDao().updateTrackTags(ids, genre, moodTags, bpm)
+                                            }
+                                        },
+                                        onDeleteTracks = { ids ->
+                                            coroutineScope.launch {
+                                                db.trackDao().deleteTracksByIds(ids)
+                                            }
                                         },
                                         modifier = Modifier.padding(innerPadding)
                                     )

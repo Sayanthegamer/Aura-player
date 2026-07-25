@@ -7,6 +7,15 @@ import androidx.room.RoomDatabase
 import com.auraplayer.app.scrobble.ScrobbleQueueDao
 import com.auraplayer.app.scrobble.ScrobbleQueueEntity
 
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tracks ADD COLUMN hasArtwork INTEGER NOT NULL DEFAULT 1")
+    }
+}
+
 @Database(
     entities = [
         LyricEntity::class,
@@ -15,7 +24,7 @@ import com.auraplayer.app.scrobble.ScrobbleQueueEntity
         ArtistEntity::class,
         ScrobbleQueueEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AuraDatabase : RoomDatabase() {
@@ -37,6 +46,7 @@ abstract class AuraDatabase : RoomDatabase() {
                     AuraDatabase::class.java,
                     "aura_database.db"
                 )
+                    .addMigrations(MIGRATION_4_5)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -45,3 +55,4 @@ abstract class AuraDatabase : RoomDatabase() {
         }
     }
 }
+

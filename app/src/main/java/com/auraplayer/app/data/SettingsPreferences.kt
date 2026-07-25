@@ -23,10 +23,16 @@ data class AppSettings(
     val dynamicColor: Boolean = true,
     val replayGainTargetLufs: Float = -18f,
     val antiClippingEnabled: Boolean = true,
-    val blacklistedFolders: Set<String> = emptySet()
+    val blacklistedFolders: Set<String> = emptySet(),
+    val homeRailOrder: List<String> = listOf("CONTINUE_LISTENING", "MADE_FOR_YOU", "MOST_PLAYED_ARTISTS", "RECENTLY_ADDED", "ON_REPEAT"),
+    val hiddenRails: Set<String> = emptySet(),
+    val songsSortOrder: String = "TITLE_ASC",
+    val songsViewMode: String = "LIST"
 )
 
-class SettingsPreferences(private val context: Context) {
+class SettingsPreferences(private val dataStore: DataStore<Preferences>) {
+
+    constructor(context: Context) : this(context.dataStore)
 
     companion object {
         private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
@@ -34,9 +40,13 @@ class SettingsPreferences(private val context: Context) {
         private val KEY_REPLAYGAIN_LUFS = floatPreferencesKey("replaygain_lufs")
         private val KEY_ANTI_CLIPPING = booleanPreferencesKey("anti_clipping")
         private val KEY_BLACKLISTED_FOLDERS = stringSetPreferencesKey("blacklisted_folders")
+        private val KEY_HOME_RAIL_ORDER = stringPreferencesKey("home_rail_order")
+        private val KEY_HIDDEN_RAILS = stringSetPreferencesKey("hidden_rails")
+        private val KEY_SONGS_SORT_ORDER = stringPreferencesKey("songs_sort_order")
+        private val KEY_SONGS_VIEW_MODE = stringPreferencesKey("songs_view_mode")
     }
 
-    val settingsFlow: Flow<AppSettings> = context.dataStore.data.map { prefs ->
+    val settingsFlow: Flow<AppSettings> = dataStore.data.map { prefs ->
         val themeStr = prefs[KEY_THEME_MODE] ?: ThemeMode.SYSTEM.name
         val themeMode = try { ThemeMode.valueOf(themeStr) } catch (e: Exception) { ThemeMode.SYSTEM }
         val dynamicColor = prefs[KEY_DYNAMIC_COLOR] ?: true
@@ -44,35 +54,46 @@ class SettingsPreferences(private val context: Context) {
         val antiClipping = prefs[KEY_ANTI_CLIPPING] ?: true
         val blacklist = prefs[KEY_BLACKLISTED_FOLDERS] ?: emptySet()
 
+        val railOrderStr = prefs[KEY_HOME_RAIL_ORDER] ?: "CONTINUE_LISTENING,MADE_FOR_YOU,MOST_PLAYED_ARTISTS,RECENTLY_ADDED,ON_REPEAT"
+        val railOrder = railOrderStr.split(",").filter { it.isNotBlank() }
+        val hiddenRails = prefs[KEY_HIDDEN_RAILS] ?: emptySet()
+
+        val songsSort = prefs[KEY_SONGS_SORT_ORDER] ?: "TITLE_ASC"
+        val songsView = prefs[KEY_SONGS_VIEW_MODE] ?: "LIST"
+
         AppSettings(
             themeMode = themeMode,
             dynamicColor = dynamicColor,
             replayGainTargetLufs = lufs,
             antiClippingEnabled = antiClipping,
-            blacklistedFolders = blacklist
+            blacklistedFolders = blacklist,
+            homeRailOrder = railOrder,
+            hiddenRails = hiddenRails,
+            songsSortOrder = songsSort,
+            songsViewMode = songsView
         )
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
-        context.dataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             prefs[KEY_THEME_MODE] = mode.name
         }
     }
 
     suspend fun setDynamicColor(enabled: Boolean) {
-        context.dataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             prefs[KEY_DYNAMIC_COLOR] = enabled
         }
     }
 
     suspend fun setReplayGainTargetLufs(lufs: Float) {
-        context.dataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             prefs[KEY_REPLAYGAIN_LUFS] = lufs
         }
     }
 
     suspend fun setAntiClippingEnabled(enabled: Boolean) {
-        context.dataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             prefs[KEY_ANTI_CLIPPING] = enabled
         }
     }
@@ -80,16 +101,40 @@ class SettingsPreferences(private val context: Context) {
     suspend fun addBlacklistedFolder(folderPath: String) {
         if (folderPath.isBlank()) return
         val normalized = folderPath.trim()
-        context.dataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             val current = prefs[KEY_BLACKLISTED_FOLDERS] ?: emptySet()
             prefs[KEY_BLACKLISTED_FOLDERS] = current + normalized
         }
     }
 
     suspend fun removeBlacklistedFolder(folderPath: String) {
-        context.dataStore.edit { prefs ->
+        dataStore.edit { prefs ->
             val current = prefs[KEY_BLACKLISTED_FOLDERS] ?: emptySet()
             prefs[KEY_BLACKLISTED_FOLDERS] = current - folderPath
+        }
+    }
+
+    suspend fun setHomeRailOrder(order: List<String>) {
+        dataStore.edit { prefs ->
+            prefs[KEY_HOME_RAIL_ORDER] = order.joinToString(",")
+        }
+    }
+
+    suspend fun setHiddenRails(hidden: Set<String>) {
+        dataStore.edit { prefs ->
+            prefs[KEY_HIDDEN_RAILS] = hidden
+        }
+    }
+
+    suspend fun setSongsSortOrder(sortOrder: String) {
+        dataStore.edit { prefs ->
+            prefs[KEY_SONGS_SORT_ORDER] = sortOrder
+        }
+    }
+
+    suspend fun setSongsViewMode(viewMode: String) {
+        dataStore.edit { prefs ->
+            prefs[KEY_SONGS_VIEW_MODE] = viewMode
         }
     }
 }

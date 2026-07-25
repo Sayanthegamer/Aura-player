@@ -5,15 +5,23 @@ import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
+import com.auraplayer.app.domain.MetadataTagParser
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jaudiotagger.audio.AudioFileIO
+import org.jaudiotagger.tag.FieldKey
+import java.io.File
 
 sealed class ScanState {
     object Idle : ScanState()
     data class Scanning(val current: Int, val total: Int) : ScanState()
+    data class Enriching(val current: Int, val total: Int) : ScanState()
     data class Completed(val trackCount: Int) : ScanState()
     data class Error(val message: String) : ScanState()
 }
@@ -25,6 +33,9 @@ class MediaScanner(
     private val _scanState = MutableStateFlow<ScanState>(ScanState.Idle)
     val scanState: StateFlow<ScanState> = _scanState.asStateFlow()
 
+    private var enrichmentJob: Job? = null
+    private val scannerScope = CoroutineScope(Dispatchers.IO)
+
     private val defaultExcludedFolderKeywords = listOf(
         "recordings",
         "voicerecorder",
@@ -35,6 +46,10 @@ class MediaScanner(
 
     suspend fun scanLibrary(blacklistedFolders: Set<String> = emptySet()): Int = withContext(Dispatchers.IO) {
         try {
+            // Cancel any in-flight background enrichment job before starting a new scan
+            enrichmentJob?.cancel()
+            enrichmentJob = null
+
             _scanState.value = ScanState.Scanning(0, 0)
             val contentResolver: ContentResolver = context.contentResolver
 
@@ -140,7 +155,10 @@ class MediaScanner(
                         bitDepth = bitDepth,
                         replayGainTrackGain = null,
                         replayGainTrackPeak = null,
-                        dateAdded = dateAdded
+                        dateAdded = dateAdded,
+                        genre = "", // Empty initially, populated during background enrichment pass
+                        bpm = 0,
+                        hasArtwork = true // Tentatively true, verified in enrichment pass
                     )
 
                     tracksList.add(trackEntity)
@@ -187,10 +205,89 @@ class MediaScanner(
 
             val finalCount = tracksList.size
             _scanState.value = ScanState.Completed(finalCount)
+
+            // Pass 2: Launch background enrichment pass for jaudiotagger ID3 genre/BPM extraction & artwork presence probe
+            if (tracksList.isNotEmpty()) {
+                startEnrichmentPass(tracksList)
+            }
+
             finalCount
         } catch (e: Exception) {
             _scanState.value = ScanState.Error(e.message ?: "Failed to scan media library")
             0
+        }
+    }
+
+    private fun startEnrichmentPass(tracks: List<TrackEntity>) {
+        enrichmentJob = scannerScope.launch {
+            try {
+                val total = tracks.size
+                var current = 0
+                _scanState.value = ScanState.Enriching(0, total)
+
+                val updatedTracks = mutableListOf<TrackEntity>()
+
+                for (track in tracks) {
+                    var parsedGenre = ""
+                    var parsedBpm = 0
+                    var hasEmbeddedArt = false
+
+                    val file = File(track.filePath)
+                    if (file.exists()) {
+                        try {
+                            val audioFile = AudioFileIO.read(file)
+                            val tag = audioFile.tag
+                            if (tag != null) {
+                                val rawGenre = tag.getFirst(FieldKey.GENRE)
+                                parsedGenre = MetadataTagParser.parseGenre(rawGenre)
+
+                                val rawBpm = tag.getFirst(FieldKey.BPM)
+                                parsedBpm = MetadataTagParser.parseBpm(rawBpm)
+
+                                hasEmbeddedArt = tag.firstArtwork != null
+                            }
+                        } catch (e: Exception) {
+                            // Suppress per-file tag read errors (e.g. unsupported metadata format)
+                        }
+                    }
+
+                    // Tier-2 Artwork Presence Probe: Check ContentResolver if embedded artwork is absent
+                    val hasMediaStoreArt = if (!hasEmbeddedArt && !track.albumArtUri.isNullOrBlank()) {
+                        try {
+                            val stream = context.contentResolver.openInputStream(Uri.parse(track.albumArtUri))
+                            val exists = stream != null
+                            stream?.close()
+                            exists
+                        } catch (e: Exception) {
+                            false
+                        }
+                    } else false
+
+                    val finalHasArtwork = hasEmbeddedArt || hasMediaStoreArt
+
+                    val enrichedTrack = track.copy(
+                        genre = parsedGenre,
+                        bpm = parsedBpm,
+                        hasArtwork = finalHasArtwork
+                    )
+                    updatedTracks.add(enrichedTrack)
+
+                    current++
+                    if (current % 25 == 0 || current == total) {
+                        _scanState.value = ScanState.Enriching(current, total)
+                        database.trackDao().insertTracks(updatedTracks.toList())
+                        updatedTracks.clear()
+                    }
+                }
+
+                if (updatedTracks.isNotEmpty()) {
+                    database.trackDao().insertTracks(updatedTracks)
+                }
+                _scanState.value = ScanState.Completed(total)
+            } catch (e: Exception) {
+                // Background enrichment errors do not break primary library state
+                _scanState.value = ScanState.Completed(tracks.size)
+            }
         }
     }
 }

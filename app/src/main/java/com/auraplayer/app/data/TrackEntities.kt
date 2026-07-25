@@ -27,7 +27,8 @@ data class TrackEntity(
     val bpm: Int = 0,
     val genre: String = "Unknown",
     val moodTags: String = "",
-    val lastPlayedTimestamp: Long = 0L
+    val lastPlayedTimestamp: Long = 0L,
+    val hasArtwork: Boolean = true
 )
 
 @Entity(tableName = "albums")

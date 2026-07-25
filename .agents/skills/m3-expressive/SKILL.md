@@ -21,6 +21,8 @@ Detailed specifications are organized into focused reference guides:
 * 🎬 **[Motion & Easing Specs](references/motion.md)**: Emphasized/Standard Easing Curves, Duration Tokens (50ms–700ms), and 4 M3 Transition Patterns (Container Transform, Shared Axis, Fade Through, Fade/Scale).
 * 🧩 **[Component Specifications](references/components.md)**: Buttons, Cards, Sliders, Bottom Sheets, Chips, and ListItem Structural Specifications.
 * 🌊 **[Expressive Extensions](references/expressive.md)**: Dynamic Palette Engine, Gaussian Brownian Motion Backgrounds, and Word-Level Karaoke Lyric Highlights.
+* 🎵 **[Rhythm UI Reference Brief](references/rhythm-ui-reference.md)**: What to emulate (shape morphing, bold dynamic colors, purposeful morphism, deep features) vs. what to reject (visual clutter, non-standard layouts, accessibility flaws).
+
 
 ---
 
