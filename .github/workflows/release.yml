@@ -79,6 +79,12 @@ jobs:
       #
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
+        env:
+          # The ubuntu-latest runner sets JAVA_TOOL_OPTIONS=-Xmx64m which the
+          # Gradle wrapper misreads as the main class name → ClassNotFoundException.
+          # Clearing it and passing heap size via GRADLE_OPTS is the correct fix.
+          JAVA_TOOL_OPTIONS: ""
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8"
 
       # ── 6. Determine tag & rename APK ────────────────────────────────────────
       - name: Prepare release artefact
