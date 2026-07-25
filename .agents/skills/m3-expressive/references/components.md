@@ -359,26 +359,91 @@ OutlinedCard(
 
 ---
 
-## 🎚️ 3. Sliders & Audio Progress Controls
+## 🎚️ 3. Sliders & Audio Progress Controls Specifications
 
-### Continuous Slider Spec (Audio Position & DSP Bands)
-* **Track Height**: $4\text{dp}$ inactive, $8\text{dp}$ active/pressed.
-* **Thumb Radius**: $10\text{dp}$ ($20\text{dp}$ diameter) with touch target $\ge 48\text{dp}$.
-* **Colors**: `activeTrackColor = primary`, `inactiveTrackColor = surfaceContainerHighest`, `thumbColor = primary`.
+Based on official Material 3 Sliders Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/sliders/*`).
+
+### A. Slider Variant Matrix
+
+| Slider Variant | Track Height | Thumb Radius | Tick Marks | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **Continuous Slider** | **4 dp** (8dp active) | **10 dp** ($20\text{dp}$ circle) | None | **Media Seek Bar** & Volume Control |
+| **Centered Slider** | **4 dp** (8dp active) | **10 dp** ($20\text{dp}$ circle) | Center zero notch | **16-Band Equalizer Gain Sliders** ($\pm 12\text{dB}$) |
+| **Discrete Slider** | **4 dp** (8dp active) | **10 dp** ($20\text{dp}$ circle) | $4\text{dp}$ Ticks | Playback speed selector ($0.5\times \to 2.0\times$) |
+| **Range Slider** | **4 dp** (8dp active) | Dual $10\text{dp}$ Thumbs | Optional | Track AB loop trim range selector |
+
+### B. Color Tokens & Touch Target Box
+* **Active Track Color**: `primary`
+* **Inactive Track Color**: `surfaceContainerHighest`
+* **Thumb Color**: `primary` (or `onPrimaryContainer`)
+* **Touch Target Box**: Minimum **$48\text{dp} \times 48\text{dp}$** touch target boundary.
+
+### C. Compose Seek Bar & Vertical Equalizer Band Patterns
 
 ```kotlin
-Slider(
-    value = positionMs.toFloat(),
-    onValueChange = { onSeek(it.toLong()) },
-    valueRange = 0f..durationMs.toFloat(),
-    colors = SliderDefaults.colors(
-        thumbColor = MaterialTheme.colorScheme.primary,
-        activeTrackColor = MaterialTheme.colorScheme.primary,
-        inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
-    ),
-    modifier = Modifier.fillMaxWidth().height(48.dp)
-)
+// 1. Continuous Media Seek Bar
+@Composable
+fun MediaSeekBar(
+    positionMs: Long,
+    durationMs: Long,
+    onSeek: (Long) -> Unit
+) {
+    Slider(
+        value = positionMs.toFloat(),
+        onValueChange = { onSeek(it.toLong()) },
+        valueRange = 0f..durationMs.coerceAtLeast(1L).toFloat(),
+        colors = SliderDefaults.colors(
+            thumbColor = MaterialTheme.colorScheme.primary,
+            activeTrackColor = MaterialTheme.colorScheme.primary,
+            inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        ),
+        modifier = Modifier.fillMaxWidth().height(48.dp)
+    )
+}
+
+// 2. Vertical Equalizer Band Slider (+12dB to -12dB)
+@Composable
+fun VerticalEqBandSlider(
+    frequencyHz: String,
+    gainDb: Float,
+    onGainChange: (Float) -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(horizontal = 4.dp)
+    ) {
+        Text("${gainDb.toInt()}dB", style = MaterialTheme.typography.labelSmall)
+        Spacer(Modifier.height(8.dp))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.height(160.dp).width(48.dp)
+        ) {
+            Slider(
+                value = gainDb,
+                onValueChange = onGainChange,
+                valueRange = -12f..12f,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.tertiary,
+                    activeTrackColor = MaterialTheme.colorScheme.tertiary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                ),
+                modifier = Modifier
+                    .graphicsLayer {
+                        rotationZ = -90f // Rotates horizontal slider into vertical EQ band
+                    }
+                    .width(160.dp)
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(frequencyHz, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+    }
+}
 ```
+
+### D. Accessibility
+* **D-Pad Navigation**: Arrow keys increment/decrement slider values smoothly.
+* **Value Announcement**: Screen readers announce formatted audio readout (e.g. `"Seek bar, 2 minutes 45 seconds of 4 minutes 12 seconds"`).
+
 
 ---
 
