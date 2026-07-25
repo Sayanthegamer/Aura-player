@@ -7,10 +7,11 @@
 
 
 ## Phase 2: Now Playing Hero Carousel, Gaussian Canvas & Hero 96dp FAB
-- [ ] Task: Refactor Now Playing artwork container to use M3 Multi-Browse Hero Carousel (`HorizontalPager` offset scaling)
-- [ ] Task: Implement `ScopedPlayerTheme` and Gaussian Brownian Motion background canvas for album artwork dynamic color transitions
-- [ ] Task: Implement $96\text{dp} \times 96\text{dp}$ Hero `LargeFloatingActionButton` for central Play/Pause control with $48\text{dp}$ media icon buttons
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Refactor Now Playing artwork container to use M3 Multi-Browse Hero Carousel (`HorizontalPager` offset scaling)
+- [x] Task: Implement `ScopedPlayerTheme` and Gaussian Brownian Motion background canvas for album artwork dynamic color transitions
+- [x] Task: Implement $96\text{dp} \times 96\text{dp}$ Hero `LargeFloatingActionButton` for central Play/Pause control with $48\text{dp}$ media icon buttons
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+
 
 ## Phase 3: Adaptive Navigation Shell & Global M3 Token Audit
 - [ ] Task: Implement `AuraAdaptiveNavigation` (Bottom `NavigationBar` for portrait, `NavigationRail` for landscape/tablets)

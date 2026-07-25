@@ -436,27 +436,27 @@ fun PlayerScreen(
                         Surface(
                             onClick = onPlayPauseToggle,
                             interactionSource = playInteractionSource,
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(28.dp),
                             color = primaryAccent,
-                            shadowElevation = 12.dp,
+                            shadowElevation = 16.dp,
                             modifier = Modifier.scale(fabScale)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(68.dp)
-                                    .padding(4.dp),
+                                    .size(96.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                     contentDescription = if (uiState.isPlaying) "Pause" else "Play",
-                                    tint = Color.Black,
-                                    modifier = Modifier.size(36.dp)
+                                    tint = dominantBg,
+                                    modifier = Modifier.size(48.dp)
                                 )
                             }
                         }
 
                         BouncyIconButton(onClick = onNextTrack) {
+
                             Icon(
                                 imageVector = Icons.Default.SkipNext,
                                 contentDescription = "Next Track",
