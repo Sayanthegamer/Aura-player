@@ -953,6 +953,58 @@ fun TrackListItemDivider() {
 ### D. Accessibility
 * **Decorative Semantics**: Dividers are purely visual grouping elements and are automatically hidden from screen reader accessibility focus trees (`semantics { isTraversalGroup = false }`).
 
+---
+
+## ⏳ 16. Loading & Progress Indicators Specifications
+
+Based on official Material 3 Loading Indicators Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/loading-indicator/*`).
+
+### A. Progress Indicator Variant Matrix
+
+| Indicator Variant | Stroke / Height | Track Color | Active Color | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **CircularProgressIndicator** | **4 dp** stroke | `surfaceContainerHighest` | `primary` | Lyrics fetching spinner, track buffering |
+| **LinearProgressIndicator** | **4 dp** height | `surfaceContainerHighest` | `primary` | **Media File Scanning Progress**, scrobble sync |
+
+### B. Compose Determinate & Indeterminate Patterns
+
+```kotlin
+// 1. Determinate Linear Progress Indicator for Media Scanning
+@Composable
+fun MediaScanProgressBar(progress: Float, scannedCount: Int, totalCount: Int) {
+    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Text("Scanning local audio...", style = MaterialTheme.typography.bodyMedium)
+            Text("$scannedCount / $totalCount", style = MaterialTheme.typography.labelMedium)
+        }
+        Spacer(Modifier.height(8.dp))
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+        )
+    }
+}
+
+// 2. Circular Progress Indicator for Lyrics Fetching
+@Composable
+fun LyricsLoadingSpinner() {
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+        CircularProgressIndicator(
+            strokeWidth = 4.dp,
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            modifier = Modifier.size(48.dp)
+        )
+    }
+}
+```
+
+### C. Accessibility
+* **Progress Semantics**: Set `progress = progressValue` on screen reader semantics so TalkBack announces completion percentage (e.g. `"Scanning library, 45 percent"`).
+
+
 
 
 
