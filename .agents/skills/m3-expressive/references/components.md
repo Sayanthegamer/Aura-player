@@ -1490,6 +1490,72 @@ fun AuraSnackbarHost(snackbarHostState: SnackbarHostState) {
 * **Live Region Announcement**: TalkBack immediately reads snackbar toast messages via polite live region semantics.
 * **Display Duration**: Minimum 4–7 seconds display duration ensures users with visual/cognitive impairments have adequate reading time.
 
+---
+
+## 🎚️ 22. Switch Specifications (DSP & Feature Toggles)
+
+Based on official Material 3 Switch Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/switch/*`).
+
+### A. Switch State & Dimensional Matrix
+
+| Switch State | Track Token (52dp × 32dp) | Thumb Token & Dimensions | Thumb Icon | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **Checked (On)** | `primary` container fill (No border) | **24 dp × 24 dp** (`onPrimary`) | `Icons.Default.Check` | **Equalizer ON**, Limiter ON, ReplayGain ON |
+| **Unchecked (Off)** | `surfaceContainerHighest` + $2\text{dp}$ `outline` | **16 dp × 16 dp** (`outline`) | None | Feature disabled state |
+
+### B. Dimensions & Touch Target
+* **Visual Track Dimensions**: **52 dp × 32 dp** Full Pill (`9999.dp`).
+* **Thumb Expansion Motion**: Unchecked thumb ($16\text{dp}$) expands smoothly to Checked thumb ($24\text{dp}$) when toggled ON.
+* **Touch Target Area**: Minimum **$48\text{dp} \times 48\text{dp}$** touch target boundary.
+
+### C. Compose Toggleable Switch Row Pattern
+
+```kotlin
+// Audio DSP Feature Switch Row with Merged Semantics
+@Composable
+fun DspFeatureSwitchRow(
+    title: String,
+    subtitle: String,
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(
+                value = enabled,
+                onValueChange = onToggle,
+                role = Role.Switch
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.width(16.dp))
+        Switch(
+            checked = enabled,
+            onCheckedChange = null, // Handled by row toggleable modifier
+            thumbContent = if (enabled) {
+                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+            } else null,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            )
+        )
+    }
+}
+```
+
+### D. Accessibility
+* **Merged Row Semantics**: Entire setting row is wrapped with `Modifier.toggleable(role = Role.Switch)` so TalkBack reads: `"16-Band Equalizer, On, double tap to toggle"`.
+
+
 
 
 
