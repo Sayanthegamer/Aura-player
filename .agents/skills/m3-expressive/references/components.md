@@ -1752,6 +1752,60 @@ fun BatchSelectionToolbar(
 ### D. Accessibility
 * **Traversal Group**: Mark floating toolbar as an accessibility group (`semantics { isTraversalGroup = true }`) so screen readers navigate batch actions sequentially.
 
+---
+
+## 💬 26. Tooltips Specifications (Plain & Rich Tooltips)
+
+Based on official Material 3 Tooltips Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/tooltips/*`).
+
+### A. Tooltip Variant Matrix
+
+| Tooltip Variant | Container Token | Content Token | Corner Radius | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **Plain Tooltip** | `inverseSurface` | `inverseOnSurface` | **4 dp** (`extraSmall`) | **Icon Button labels on long-press** ("16-Band Equalizer", "ReplayGain") |
+| **Rich Tooltip** | `surfaceContainer` | `onSurface` | **12 dp** (`medium`) | Explanatory DSP feature tooltips (Title + Body description) |
+
+### B. Dimensions & Elevation Tokens
+* **Plain Tooltip Height**: **24 dp – 32 dp** (Horizontal padding **8 dp**).
+* **Rich Tooltip Width**: Max **320 dp** ($3\text{dp}$ tonal elevation).
+* **Typography**: `labelMedium` ($12\text{sp}$) for Plain Tooltips; `titleSmall` ($14\text{sp}$) + `bodySmall` ($12\text{sp}$) for Rich Tooltips.
+
+### C. Compose TooltipBox Pattern
+
+```kotlin
+// Plain Tooltip for Audio Control Icon Button
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AudioControlIconButton(
+    tooltipText: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        tooltip = {
+            PlainTooltip(
+                shape = RoundedCornerShape(4.dp),
+                containerColor = MaterialTheme.colorScheme.inverseSurface,
+                contentColor = MaterialTheme.colorScheme.inverseOnSurface
+            ) {
+                Text(tooltipText, style = MaterialTheme.typography.labelMedium)
+            }
+        },
+        state = rememberTooltipState()
+    ) {
+        IconButton(onClick = onClick, modifier = Modifier.size(48.dp)) {
+            Icon(icon, contentDescription = tooltipText)
+        }
+    }
+}
+```
+
+### D. Accessibility
+* **Screen Reader Integration**: Tooltip text automatically populates as `contentDescription` fallback for icon buttons.
+* **Dismiss Semantics**: Tapping outside or scrolling dismisses active tooltip smoothly.
+
+
 
 
 
