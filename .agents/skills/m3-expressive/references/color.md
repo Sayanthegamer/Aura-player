@@ -1,6 +1,6 @@
 # Material 3 Color System Architecture & HCT Specification
 
-Based on official [Material 3 Color System Overview](https://m3.material.io/styles/color/system/overview) and [How the Color System Works](https://m3.material.io/styles/color/system/how-the-system-works).
+Based on official [Material 3 Color System Overview](https://m3.material.io/styles/color/system/overview), [How the Color System Works](https://m3.material.io/styles/color/system/how-the-system-works), and [Color Roles](https://m3.material.io/styles/color/roles).
 
 ## 🎨 1. The HCT Color Model (Hue, Chroma, Tone)
 
@@ -11,9 +11,6 @@ Material 3 uses the **HCT (Hue, Chroma, Tone)** color space instead of RGB, HSL,
    Color Angle       Color Purity /        Perceptual Lightness
    0° to 360°        Intensity (0 to 120+) 0 = Black, 100 = White
 ```
-
-### Why HCT Matters
-Traditional HSL lightness is uncalibrated — yellow at HSL lightness 50% appears blindingly bright while blue at 50% appears dark. **HCT Tone (T)** guarantees that Tone 50 has the exact same perceptual lightness regardless of Hue or Chroma, making contrast calculations 100% predictable.
 
 ---
 
@@ -35,26 +32,30 @@ Each Tonal Palette produces 13 tone levels: **T0 (Black), T10, T20, T30, T40, T5
 
 ---
 
-## 🏛️ 3. Complete Color Token System Mapping
+## 🏛️ 3. Complete Color Roles Reference Table
 
-### A. Accent & Container Tokens
+### A. Key Accent Color Groups
 
-| Role | Dark Theme Tone | Light Theme Tone | Intent / Component Usage |
+| Color Role | Dark Theme Tone | Light Theme Tone | Primary UI Usage |
 |:---|:---|:---|:---|
-| `primary` | **Tone 80** | **Tone 40** | Key active buttons, prominent FABs, active tab indicators |
-| `onPrimary` | **Tone 20** | **Tone 100** | Text and icons placed on top of `primary` |
-| `primaryContainer` | **Tone 30** | **Tone 90** | Prominent container fills, selected chips |
-| `onPrimaryContainer` | **Tone 90** | **Tone 10** | Text and icons placed on top of `primaryContainer` |
+| `primary` | **Tone 80** | **Tone 40** | Primary buttons, active play state, active tab indicators |
+| `onPrimary` | **Tone 20** | **Tone 100** | Text and icons rendered on top of `primary` |
+| `primaryContainer` | **Tone 30** | **Tone 90** | Prominent container fills, FABs, selected chips |
+| `onPrimaryContainer` | **Tone 90** | **Tone 10** | Text and icons rendered on top of `primaryContainer` |
 | `secondary` | **Tone 80** | **Tone 40** | Filter chips, secondary toggles, badge fills |
-| `onSecondary` | **Tone 20** | **Tone 100** | Text and icons placed on top of `secondary` |
+| `onSecondary` | **Tone 20** | **Tone 100** | Text and icons rendered on top of `secondary` |
 | `secondaryContainer` | **Tone 30** | **Tone 90** | Unselected elevated card fills, secondary buttons |
 | `onSecondaryContainer` | **Tone 90** | **Tone 10** | Text on top of `secondaryContainer` |
-| `tertiary` | **Tone 80** | **Tone 40** | Highlighting badges, playback progress, special tags |
+| `tertiary` | **Tone 80** | **Tone 40** | Highlighting badges, audio DSP EQ band highlights, progress bars |
 | `onTertiary` | **Tone 20** | **Tone 100** | Text on top of `tertiary` |
-| `tertiaryContainer` | **Tone 30** | **Tone 90** | Highlighted notification banners, WIP cards |
+| `tertiaryContainer` | **Tone 30** | **Tone 90** | Highlighted notification banners, WIP info cards |
 | `onTertiaryContainer` | **Tone 90** | **Tone 10** | Text on top of `tertiaryContainer` |
+| `error` | **Tone 80** | **Tone 40** | Destructive actions, delete buttons, error alerts |
+| `onError` | **Tone 20** | **Tone 100** | Text and icons on top of `error` |
+| `errorContainer` | **Tone 30** | **Tone 90** | Error card fills, alert banners |
+| `onErrorContainer` | **Tone 90** | **Tone 10** | Text on top of `errorContainer` |
 
-### B. Surface Container Family Tokens
+### B. Surface Container Family Roles
 
 ```
   DARK THEME SURFACE HIERARCHY (Perceptual Lightness Increasing)
@@ -69,15 +70,30 @@ Each Tonal Palette produces 13 tone levels: **T0 (Black), T10, T20, T30, T40, T5
   └─────────────────────────────────────────────────────────────┘
 ```
 
-### C. Outline & Border Tokens
-* `outline`: **Tone 60** (Dark) / **Tone 50** (Light) — Primary input borders and cards.
-* `outlineVariant`: **Tone 30** (Dark) / **Tone 80** (Light) — Subtle list dividers and card outlines.
+| Surface Role | Dark Tone | Light Tone | Component Mapping |
+|:---|:---|:---|:---|
+| `surfaceDim` | **Tone 6** | **Tone 87** | Dimmed background underneath sheets |
+| `surface` | **Tone 6** | **Tone 98** | Default root app canvas |
+| `surfaceBright` | **Tone 24** | **Tone 98** | High-emphasis bright background |
+| `surfaceContainerLow` | **Tone 10** | **Tone 96** | Cards sitting directly on the canvas |
+| `surfaceContainer` | **Tone 12** | **Tone 94** | Default cards, dialogs, and media lists |
+| `surfaceContainerHigh` | **Tone 17** | **Tone 92** | Floating mini-player bar, bottom sheets |
+| `surfaceContainerHighest` | **Tone 22** | **Tone 90** | Text field fills, active sliders, selected items |
 
-### D. Fixed Color Tokens (Media Controls)
-Fixed tokens maintain consistent color values regardless of whether the app is in Light or Dark theme:
+### C. Utility & Inverse Roles
+* `outline`: **Tone 60** (Dark) / **Tone 50** (Light) — Text field borders and prominent outlines.
+* `outlineVariant`: **Tone 30** (Dark) / **Tone 80** (Light) — Subtle list dividers and card outlines.
+* `scrim`: **Tone 0** (Black with alpha) — Modal background dimming overlay.
+* `inverseSurface`: **Tone 90** (Dark) / **Tone 20** (Light) — High-contrast snackbars.
+* `inverseOnSurface`: **Tone 10** (Dark) / **Tone 95** (Light) — Text inside inverse snackbars.
+* `inversePrimary`: **Tone 40** (Dark) / **Tone 80** (Light) — Primary button inside an inverse surface.
+
+### D. Fixed Color Roles (Media Controls)
+Fixed tokens maintain constant color values regardless of Light or Dark theme:
 * `primaryFixed`: **Tone 90** (Constant light accent for media play buttons).
-* `onPrimaryFixed`: **Tone 10** (Constant dark icon on top of `primaryFixed`).
 * `primaryFixedDim`: **Tone 80** (Subtle fixed accent for secondary controls).
+* `onPrimaryFixed`: **Tone 10** (Constant dark icon on top of `primaryFixed`).
+* `onPrimaryFixedVariant`: **Tone 30** (Secondary text on top of `primaryFixed`).
 
 ---
 
