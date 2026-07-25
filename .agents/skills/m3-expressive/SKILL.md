@@ -12,6 +12,7 @@ This skill provides full-spectrum guidelines based on official [Material Design 
 Detailed specifications are organized into focused reference guides:
 
 * 🎨 **[Foundations & Primitives](references/foundations.md)**: HCT Color Space, 5-Tier Surface Container Roles, Shape Scale, Typography Scale (15 Roles), Motion Physics & Accessibility.
+* 📐 **[Shape Scale & Radii Specs](references/shape.md)**: The 7-Level Corner Radius Scale (0dp to Full), Asymmetric Corners, Compose `Shapes` Tokens, and Dynamic Shape Morphing.
 * 🎬 **[Motion & Easing Specs](references/motion.md)**: Emphasized/Standard Easing Curves, Duration Tokens (50ms–700ms), and 4 M3 Transition Patterns (Container Transform, Shared Axis, Fade Through, Fade/Scale).
 * 🧩 **[Component Specifications](references/components.md)**: Buttons, Cards, Sliders, Bottom Sheets, Chips, and ListItem Structural Specifications.
 * 🌊 **[Expressive Extensions](references/expressive.md)**: Dynamic Palette Engine, Gaussian Brownian Motion Backgrounds, and Word-Level Karaoke Lyric Highlights.
