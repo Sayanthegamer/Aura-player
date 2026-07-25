@@ -335,7 +335,12 @@ You can also trigger a build manually from the **Actions** tab → **Release APK
 
 ## 📄 License
 
-This project is currently unlicensed / all rights reserved. A proper open-source license will be added once the project leaves WIP status.
+This project is licensed under the **GNU General Public License v3.0** (GPL-3.0) - see the [LICENSE](LICENSE) file for details.
+
+```
+Aura Player - A hi-fi local music player for Android
+Copyright (C) 2026 Sayan (Sayanthegamer)
+```
 
 ---
 
