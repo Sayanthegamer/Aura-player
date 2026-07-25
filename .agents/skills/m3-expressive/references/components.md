@@ -1081,6 +1081,103 @@ fun TrackOptionsMenu(
 * **Menu Traversal**: Arrow keys move focus between menu items sequentially.
 * **Dismiss Semantics**: Pressing `Escape` key or tapping outside dismisses the menu safely.
 
+---
+
+## 🧭 18. Complete Navigation Suite (NavigationBar, NavigationRail & NavigationDrawer)
+
+Based on official Material 3 Navigation Bar, Navigation Rail, and Navigation Drawer Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/navigation-*`).
+
+### A. Navigation Component Adaptive Matrix
+
+| Navigation Component | Screen Orientation / Device | Container Dimensions | Container Token | Active Indicator Pill | Primary Usage |
+|:---|:---|:---|:---|:---|:---|
+| **NavigationBar** | Mobile Portrait | **80 dp** Height | `surfaceContainer` (3dp) | **64 dp × 32 dp** (`secondaryContainer`) | Primary 3–5 main tabs (Tracks, Albums, Artists, Settings) |
+| **NavigationRail** | Tablet / Mobile Landscape | **80 dp** Width | `surface` (0dp) | **56 dp × 32 dp** (`secondaryContainer`) | Side vertical navigation bar for wide screens |
+| **ModalNavigationDrawer** | Foldables / Tablets | **360 dp** Width | `surfaceContainerLow` (1dp) | Full row highlight ($28\text{dp}$ radius) | Slide-out library filter & playlist drawer |
+| **DismissibleNavigationDrawer** | Desktop / Large Tablet | **360 dp** Width | `surface` (0dp) | Full row highlight ($28\text{dp}$ radius) | Permanent side library drawer |
+
+### B. Structural & Active Indicator Tokens
+* **Active Indicator Pill**: **64 dp × 32 dp** pill in `secondaryContainer` containing active filled icon in `onSecondaryContainer`.
+* **Icon States**: Unselected icons use `Outline` variant; selected active icons use `Filled` variant.
+* **Typography**: `labelMedium` ($12\text{sp}$) with medium weight.
+
+### C. Compose Adaptive Navigation Pattern
+
+```kotlin
+// Adaptive App Navigation Layout (Mobile NavigationBar vs Tablet NavigationRail)
+@Composable
+fun AuraAdaptiveNavigation(
+    currentDestination: String,
+    onNavigate: (String) -> Unit,
+    windowWidthSizeClass: WindowWidthSizeClass,
+    content: @Composable () -> Unit
+) {
+    val items = listOf("Tracks", "Albums", "Artists", "Settings")
+
+    if (windowWidthSizeClass == WindowWidthSizeClass.Expanded) {
+        // Landscape / Tablet Wide Screen -> NavigationRail
+        Row(modifier = Modifier.fillMaxSize()) {
+            NavigationRail(
+                containerColor = MaterialTheme.colorScheme.surface,
+                header = {
+                    FloatingActionButton(onClick = { /* Quick Action */ }, containerColor = MaterialTheme.colorScheme.primaryContainer) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Play All")
+                    }
+                }
+            ) {
+                items.forEach { item ->
+                    val selected = currentDestination == item
+                    NavigationRailItem(
+                        selected = selected,
+                        onClick = { onNavigate(item) },
+                        icon = {
+                            Icon(
+                                imageVector = if (selected) getFilledIcon(item) else getOutlinedIcon(item),
+                                contentDescription = item
+                            )
+                        },
+                        label = { Text(item, style = MaterialTheme.typography.labelMedium) }
+                    )
+                }
+            }
+            Box(modifier = Modifier.weight(1f)) { content() }
+        }
+    } else {
+        // Mobile Portrait -> Bottom NavigationBar
+        Scaffold(
+            bottomBar = {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = 3.dp
+                ) {
+                    items.forEach { item ->
+                        val selected = currentDestination == item
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = { onNavigate(item) },
+                            icon = {
+                                Icon(
+                                    imageVector = if (selected) getFilledIcon(item) else getOutlinedIcon(item),
+                                    contentDescription = item
+                                )
+                            },
+                            label = { Text(item, style = MaterialTheme.typography.labelMedium) }
+                        )
+                    }
+                }
+            }
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) { content() }
+        }
+    }
+}
+```
+
+### D. Accessibility
+* **Active Destination Announcement**: TalkBack automatically announces selected navigation destination (e.g. `"Tracks, Selected, Tab 1 of 4"`).
+* **Target Box**: Every navigation item enforces a $48\text{dp} \times 48\text{dp}$ touch target area.
+
+
 
 
 
