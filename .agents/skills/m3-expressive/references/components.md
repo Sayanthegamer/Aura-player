@@ -50,6 +50,72 @@ ExtendedFloatingActionButton(
 )
 ```
 
+#### FAB Menu (Speed Dial Reveal Pattern)
+Based on official [Material 3 FAB Menu Specs](https://m3.material.io/components/fab-menu/specs) and [Guidelines](https://m3.material.io/components/fab-menu/guidelines).
+
+Tapping the main FAB reveals a vertical stack of **Small FABs** ($40\text{dp} \times 40\text{dp}$) with accompanying label pills:
+* **Trigger FAB Morph**: Main FAB icon rotates $45^\circ \to 90^\circ$ (e.g. `+` morphs to `×`).
+* **Staggered Entry**: Items reveal sequentially with a $50\text{ms}$ stagger delay using `BouncySpring`.
+* **Scrim Background**: Darkens background with Level 4 scrim (`Color.Black.copy(alpha = 0.4f)`).
+
+```kotlin
+// FAB Menu Container Implementation
+Box(modifier = Modifier.fillMaxSize()) {
+    // Scrim overlay when expanded
+    if (isFabMenuExpanded) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.4f))
+                .clickable { isFabMenuExpanded = false }
+        )
+    }
+
+    Column(
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+    ) {
+        if (isFabMenuExpanded) {
+            // Speed Dial Item 1: Scan Folder
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                    Text("Scan Folder", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
+                Spacer(Modifier.width(8.dp))
+                SmallFloatingActionButton(onClick = onScanFolder) {
+                    Icon(Icons.Default.FolderOpen, contentDescription = "Scan Folder")
+                }
+            }
+            // Speed Dial Item 2: Add Playlist
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                    Text("New Playlist", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                }
+                Spacer(Modifier.width(8.dp))
+                SmallFloatingActionButton(onClick = onNewPlaylist) {
+                    Icon(Icons.Default.PlaylistAdd, contentDescription = "New Playlist")
+                }
+            }
+        }
+
+        // Main Trigger FAB
+        FloatingActionButton(
+            onClick = { isFabMenuExpanded = !isFabMenuExpanded },
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ) {
+            val rotation by animateFloatAsState(if (isFabMenuExpanded) 45f else 0f)
+            Icon(
+                Icons.Default.Add,
+                contentDescription = "Quick Actions",
+                modifier = Modifier.graphicsLayer { rotationZ = rotation }
+            )
+        }
+    }
+}
+```
+
+
 
 ### C. Icon Buttons (Standard, Filled, Tonal, Outlined)
 
