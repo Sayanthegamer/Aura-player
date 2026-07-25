@@ -411,16 +411,33 @@ Surface(
 
 ---
 
-## 📋 6. List Items (Track / Album Rows)
+## 📋 6. List Item Specifications (One-Line, Two-Line & Three-Line Items)
 
-Use standard 3-line structural layout for media lists:
+Based on official Material 3 Lists Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/lists/*`).
+
+### A. List Item Variant Matrix
+
+| List Item Variant | Container Height | Leading Slot | Headline Typography | Supporting Text | Primary Usage |
+|:---|:---|:---|:---|:---|:---|
+| **One-Line ListItem** | **56 dp** (48dp dense) | $24\text{dp}$ Icon / Avatar | `bodyLarge` ($16\text{sp}$) | None | Quick setting items, genre list |
+| **Two-Line ListItem** | **72 dp** | **48 dp × 48 dp** Art | `titleMedium` ($16\text{sp}$) | `bodyMedium` ($14\text{sp}$) | **Standard Music Track Item** (Title + Artist) |
+| **Three-Line ListItem** | **88 dp** | **48 dp × 48 dp** Art | `titleMedium` ($16\text{sp}$) | `bodyMedium` + `bodySmall` | Rich Track Item (Title + Artist + Codec Badges) |
+
+### B. Structural & Slot Spacing Tokens
+* **Horizontal Padding**: **16 dp** (`M3Spacing.Large`).
+* **Leading Slot Box**: **48 dp × 48 dp** ($8\text{dp}$ concentric corner radius).
+* **Leading Slot Gap**: **16 dp** spacing before headline text.
+* **Trailing Slot**: Trailing action button (e.g. `MoreVert` menu icon or `DragHandle` for reordering queue).
+
+### C. Compose ListItem Pattern
 
 ```kotlin
+// Two-Line Track List Item (Standard Music Track Row)
 ListItem(
     headlineContent = {
         Text(
             text = track.title,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -428,7 +445,7 @@ ListItem(
     },
     supportingContent = {
         Text(
-            text = "${track.artistName} • ${track.albumName}",
+            text = "${track.artist} • ${track.album}",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -436,18 +453,34 @@ ListItem(
         )
     },
     leadingContent = {
-        // 48dp Rounded Album Art Thumbnail
         AsyncImage(
-            model = track.albumArtUri,
+            model = track.artUri,
             contentDescription = null,
-            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp))
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(8.dp))
         )
     },
     trailingContent = {
-        IconButton(onClick = { /* More actions */ }) {
-            Icon(Icons.Default.MoreVert, contentDescription = "More")
+        IconButton(onClick = onOpenTrackOptions) {
+            Icon(Icons.Default.MoreVert, contentDescription = "Track Options")
         }
     },
+    colors = ListItemDefaults.colors(
+        containerColor = Color.Transparent,
+        headlineColor = MaterialTheme.colorScheme.onSurface,
+        supportingColor = MaterialTheme.colorScheme.onSurfaceVariant
+    ),
+    modifier = Modifier
+        .fillMaxWidth()
+        .clickable { onPlayTrack(track) }
+)
+```
+
+### D. Accessibility
+* **Row Accessibility Semantics**: Entire list item row acts as a single clickable target so TalkBack reads: `"Song Title, by Artist, double tap to play"`.
+
+
 ## 🏛️ 7. App Bars (Top & Bottom App Bar Specifications)
 
 Based on official [Material 3 App Bars Overview](https://m3.material.io/components/app-bars/overview), [Specs](https://m3.material.io/components/app-bars/specs), [Guidelines](https://m3.material.io/components/app-bars/guidelines), and [Accessibility](https://m3.material.io/components/app-bars/accessibility).
