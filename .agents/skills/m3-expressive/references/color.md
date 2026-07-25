@@ -120,17 +120,39 @@ Material 3 supports two primary scheme generation modes: **Dynamic Color** (deri
 | `Neutral` | Desaturates chroma for an ultra-clean, monochrome aesthetic | Minimalist / AMOLED dark mode |
 
 ### B. Dynamic Color Decision Flow
+### C. Custom Brand Colors & Color Harmonization (Blend)
+
+When integrating custom semantic colors (e.g., custom brand accents, FLAC/DSD quality badges, genre tags) alongside dynamic artwork palettes, custom colors must be **harmonized** to prevent visual clashing.
+
+#### The Harmonization Algorithm
+Color Harmonization shifts the HCT **Hue** of a custom design color slightly towards the primary seed color's Hue, while preserving the custom color's original Chroma and Tone.
+
+```kotlin
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+
+// Harmonize custom brand color with dynamic primary seed
+fun harmonizeColor(
+    customColor: Color,
+    primarySeedColor: Color
+): Color {
+    val customArgb = customColor.toArgb()
+    val primarySeedArgb = primarySeedColor.toArgb()
+    
+    // Shifts customColor hue towards primarySeedColor hue
+    val harmonizedArgb = com.google.android.material.color.MaterialColors.harmonize(
+        customArgb,
+        primarySeedArgb
+    )
+    return Color(harmonizedArgb)
+}
 ```
-                     User Plays Track
-                            │
-             Does Track Have Album Artwork?
-                     ┌──────┴──────┐
-                    YES            NO
-                     │             │
-           Extract Seed Color      Fallback to System Wallpaper
-          via Palette / HCT        (dynamicDarkColorScheme)
-                     │             or Static App Brand Color
-           Apply Content/Expressive
-           Scheme Variant to Player UI
-```
+
+#### Custom Color Role Quadrant
+Each custom brand color expands into 4 harmonized roles:
+1. `customColor`: Base harmonized brand color.
+2. `onCustomColor`: Text/icons placed on top of `customColor`.
+3. `customColorContainer`: Tonal container background fill for badges/chips.
+4. `onCustomColorContainer`: Text/icons placed on top of `customColorContainer`.
+
 
