@@ -8,12 +8,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,7 +42,12 @@ fun AudioDspBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+            )
+        },
         modifier = modifier
     ) {
         Column(
@@ -58,13 +66,13 @@ fun AudioDspBottomSheet(
                 Column {
                     Text(
                         text = "Audio DSP & Equalizer",
-                        fontSize = 20.sp,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = if (dspState.isDynamicsProcessingSupported) "16-Band Parametric Dynamics DSP" else "5-Band Hardware Equalizer",
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -72,14 +80,23 @@ fun AudioDspBottomSheet(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = if (dspState.isEnabled) "ON" else "OFF",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
                         color = if (dspState.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Switch(
                         checked = dspState.isEnabled,
-                        onCheckedChange = onToggleEnabled
+                        onCheckedChange = onToggleEnabled,
+                        thumbContent = if (dspState.isEnabled) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                        )
                     )
                 }
             }
@@ -90,9 +107,9 @@ fun AudioDspBottomSheet(
                 Column {
                     // Preset Selection Chips
                     Text(
-                        text = "Presets",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        text = "Equalizer Presets",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -102,13 +119,20 @@ fun AudioDspBottomSheet(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         items(EqPreset.values()) { preset ->
+                            val isSelected = dspState.preset == preset
                             FilterChip(
-                                selected = dspState.preset == preset,
+                                selected = isSelected,
                                 onClick = { onSelectPreset(preset) },
-                                label = { Text(preset.displayName) },
+                                label = { Text(preset.displayName, style = MaterialTheme.typography.labelMedium) },
+                                leadingIcon = if (isSelected) {
+                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                                } else null,
+                                shape = RoundedCornerShape(8.dp),
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    containerColor = Color.Transparent,
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             )
                         }
@@ -116,11 +140,11 @@ fun AudioDspBottomSheet(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Bass & Treble Quick Controls
+                    // Bass & Treble Sound Enhancements
                     Text(
                         text = "Sound Enhancements",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -132,21 +156,27 @@ fun AudioDspBottomSheet(
                         // Bass Boost Card
                         Card(
                             modifier = Modifier.weight(1f),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest)
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Bass Boost", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                                    Text("+${dspState.bassBoostGainDb.roundToInt()} dB", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    Text("Bass Boost", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+                                    Text("+${dspState.bassBoostGainDb.roundToInt()} dB", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                 }
                                 Slider(
                                     value = dspState.bassBoostGainDb,
                                     onValueChange = onBassBoostChanged,
                                     valueRange = 0f..10f,
-                                    steps = 9
+                                    steps = 9,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = MaterialTheme.colorScheme.primary,
+                                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    )
                                 )
                             }
                         }
@@ -154,21 +184,27 @@ fun AudioDspBottomSheet(
                         // Treble Boost Card
                         Card(
                             modifier = Modifier.weight(1f),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest)
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Treble", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                                    Text("+${dspState.trebleGainDb.roundToInt()} dB", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    Text("Treble", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+                                    Text("+${dspState.trebleGainDb.roundToInt()} dB", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                 }
                                 Slider(
                                     value = dspState.trebleGainDb,
                                     onValueChange = onTrebleChanged,
                                     valueRange = 0f..10f,
-                                    steps = 9
+                                    steps = 9,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = MaterialTheme.colorScheme.primary,
+                                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    )
                                 )
                             }
                         }
@@ -176,27 +212,29 @@ fun AudioDspBottomSheet(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // 16-Band Parametric Equalizer Sliders
+                    // Vertical Equalizer Band Gain Sliders
                     Text(
-                        text = "Parametric Frequencies",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        text = "Vertical Equalizer Bands (±12 dB)",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    Card(
+                    OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         LazyRow(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                .padding(vertical = 16.dp, horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(dspState.bands) { band ->
-                                BandSliderColumn(
+                                VerticalEqBandSliderColumn(
                                     band = band,
                                     onGainChanged = { gain -> onBandGainChanged(band.index, gain) }
                                 )
@@ -210,7 +248,7 @@ fun AudioDspBottomSheet(
 }
 
 @Composable
-private fun BandSliderColumn(
+private fun VerticalEqBandSliderColumn(
     band: EqBand,
     onGainChanged: (Float) -> Unit
 ) {
@@ -218,16 +256,17 @@ private fun BandSliderColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.width(48.dp)
     ) {
-        // Gain value text
+        // Gain readout text
         val gainText = if (band.gainDb > 0) "+${String.format("%.1f", band.gainDb)}" else String.format("%.1f", band.gainDb)
         Text(
             text = gainText,
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
-            color = if (band.gainDb != 0f) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (band.gainDb != 0f) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // True Vertical Slider via graphics rotation & layout constraint swapping
         Box(
@@ -240,12 +279,16 @@ private fun BandSliderColumn(
                 value = band.gainDb,
                 onValueChange = onGainChanged,
                 valueRange = band.minGainDb..band.maxGainDb,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.tertiary,
+                    activeTrackColor = MaterialTheme.colorScheme.tertiary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                ),
                 modifier = Modifier
                     .graphicsLayer {
                         rotationZ = -90f
                     }
                     .layout { measurable, constraints ->
-                        // Swap width and height for vertical layout calculation
                         val placeable = measurable.measure(
                             constraints.copy(
                                 minWidth = constraints.minHeight,
@@ -261,13 +304,14 @@ private fun BandSliderColumn(
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Center Frequency label
+        // Frequency label (Hz / kHz)
         val freqLabel = if (band.centerFreqHz >= 1000) "${band.centerFreqHz / 1000}k" else "${band.centerFreqHz}"
         Text(
             text = freqLabel,
-            fontSize = 11.sp,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
