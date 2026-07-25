@@ -820,8 +820,77 @@ fun SleepTimerPickerDialog(
 * **Dial Accessibility**: D-pad navigation moves through clock dial numbers sequentially.
 * **Time Announcement**: TalkBack announces formatted hour/minute selection (e.g. `"11 hours, 30 minutes PM, selected"`).
 
+---
 
+## 💬 14. Dialogs Specifications (Alert & Full-Screen Dialogs)
 
+Based on official Material 3 Dialogs Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/dialogs/*`).
+
+### A. Dialog Variant Matrix
+
+| Dialog Variant | Container Token | Corner Radius | Width Boundaries | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **Alert / Basic Dialog** | `surfaceContainerHigh` (Level 3 / $6\text{dp}$) | **28 dp** (`extraLarge`) | **280 dp – 560 dp** | Confirmations ("Delete Playlist", "Clear History") |
+| **Full-Screen Dialog** | `surface` (Level 0 / $0\text{dp}$) | **0 dp** (Full screen) | 100% Window Width & Height | Complex tasks (Track Tag & Metadata Editor) |
+
+### B. Dimensions, Scrim & Typography Tokens
+* **Container Corner Radius**: **28 dp** (`shape.extraLarge`).
+* **Container Color**: `surfaceContainerHigh` ($6\text{dp}$ tonal elevation).
+* **Scrim Background**: Level 4 Scrim overlay (`Color.Black.copy(alpha = 0.32f)`).
+* **Title Typography**: `headlineSmall` ($24\text{sp}$) with optional leading icon ($24\text{dp}$).
+* **Body Typography**: `bodyMedium` ($14\text{sp}$) in `onSurfaceVariant`.
+
+### C. Compose AlertDialog Pattern
+
+```kotlin
+// Confirmation Alert Dialog for Deleting Playlist
+@Composable
+fun DeletePlaylistConfirmDialog(
+    playlistName: String,
+    onConfirmDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.DeleteForever,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error
+            )
+        },
+        title = {
+            Text("Delete $playlistName?", style = MaterialTheme.typography.headlineSmall)
+        },
+        text = {
+            Text(
+                "This action will permanently delete the playlist from your library.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirmDelete()
+                onDismiss()
+            }) {
+                Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        shape = RoundedCornerShape(28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    )
+}
+```
+
+### D. Accessibility
+* **Focus Trapping**: Modal dialog traps D-pad & keyboard focus within dialog buttons while open.
+* **Dismiss Semantics**: Pressing `Back` hardware key or tapping background scrim dismisses dialog safely.
 
 
 
