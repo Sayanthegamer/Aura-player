@@ -604,9 +604,58 @@ HorizontalPager(
 }
 ```
 
-### C. Accessibility
-* **Focus Traversal**: Screen reader focus snaps to the active focal item in center.
-* **Announcement**: Page changes announce track title, artist, and item count (e.g. `"Album 2 of 10: Random Access Memories by Daft Punk"`).
+## ☑️ 10. Checkbox (Multi-Selection & Batch State Specifications)
+
+Based on official [Material 3 Checkbox Overview](https://m3.material.io/components/checkbox/overview), [Specs](https://m3.material.io/components/checkbox/specs), [Guidelines](https://m3.material.io/components/checkbox/guidelines), and [Accessibility](https://m3.material.io/components/checkbox/accessibility).
+
+### A. Checkbox State Matrix
+
+| Checkbox State | Container Token | Mark / Stroke Icon | Primary Usage |
+|:---|:---|:---|:---|
+| **Unchecked** | Transparent | $2\text{dp}$ `outline` border | Unselected track in batch list |
+| **Checked** | `primary` | `onPrimary` Checkmark | Selected track for playlist export |
+| **Indeterminate (Mixed)** | `primary` | `onPrimary` Horizontal Dash | Partially selected album (some tracks selected) |
+
+### B. Dimensions & Touch Target
+* **Visual Box Dimensions**: **18 dp × 18 dp** ($2\text{dp}$ corner radius / `shape.extraSmall`).
+* **Touch Target Area**: Minimum **$48\text{dp} \times 48\text{dp}$** touch target boundary.
+
+### C. Compose Toggleable Row Pattern
+
+```kotlin
+// Batch Selection Track Row with Merged Accessibility Semantics
+Row(
+    verticalAlignment = Alignment.CenterVertically,
+    modifier = Modifier
+        .fillMaxWidth()
+        .toggleable(
+            value = isTrackSelected,
+            onValueChange = { onToggleTrackSelection(track) },
+            role = Role.Checkbox
+        )
+        .padding(horizontal = 16.dp, vertical = 12.dp)
+) {
+    Checkbox(
+        checked = isTrackSelected,
+        onCheckedChange = null, // Handled by row toggleable modifier
+        colors = CheckboxDefaults.colors(
+            checkedColor = MaterialTheme.colorScheme.primary,
+            uncheckedColor = MaterialTheme.colorScheme.outline
+        )
+    )
+    Spacer(Modifier.width(16.dp))
+    Text(
+        text = track.title,
+        style = MaterialTheme.typography.bodyLarge,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+```
+
+### D. Accessibility
+* **Merged Semantics**: Wrap the Checkbox and Label in a parent `Modifier.toggleable(role = Role.Checkbox)` so TalkBack treats the entire row as a single accessible $48\text{dp}$ target.
+
 
 
 
