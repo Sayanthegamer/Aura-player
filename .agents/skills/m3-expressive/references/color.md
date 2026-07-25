@@ -184,10 +184,96 @@ val BaselineDarkColorScheme = darkColorScheme(
     onSurface = Color(0xFFE6E0E9),
     surfaceVariant = Color(0xFF49454F),
     onSurfaceVariant = Color(0xFFCAC4D0),
-    outline = Color(0xFF938F99),
-    outlineVariant = Color(0xFF49454F)
-)
+## 🌊 6. Dynamic Color Sources: User-Generated vs. Content-Based
+
+Material 3 distinguishes between two dynamic color sources:
+
 ```
+                    DYNAMIC COLOR SOURCES
+                              │
+         ┌────────────────────┴────────────────────┐
+         ▼                                         ▼
+USER-GENERATED SOURCE                      CONTENT-BASED SOURCE
+(System Wallpaper / Android 12+)          (Album Artwork / Video Poster)
+Used for: App Shell, Library Lists,       Used for: Now Playing Player,
+Navigation Bars, Settings                 Artwork Background Canvas
+```
+
+---
+
+### A. User-Generated Dynamic Color (System Wallpaper)
+* **API Engine**: `dynamicDarkColorScheme(context)` / `dynamicLightColorScheme(context)` (API 31+).
+* **Usage**: Governs global application scaffolding (Main Tab Navigation, Library List Views, Settings Screen).
+* **Intent**: Maintains visual consistency with the user's Android system-wide Material You customization.
+
+```kotlin
+// App Level Theme Wrapping
+@Composable
+fun AuraAppTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    val context = LocalContext.current
+    val colorScheme = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (darkTheme) dynamicDarkColorScheme(context)
+            else dynamicLightColorScheme(context)
+        }
+        else -> BaselineDarkColorScheme
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        shapes = ExpressiveShapes,
+        content = content
+    )
+}
+```
+
+---
+
+### B. Content-Based Dynamic Color (Album Artwork)
+* **Extraction Engine**: AndroidX `Palette` / `Quantizer` on album artwork bitmap.
+* **Content-Fidelity Rule**: Content-based schemes preserve high fidelity to the media artwork's primary hue and saturation so the player interface feels like a natural extension of the music.
+* **Scoped Lifecycle**: Confined strictly to the **Now Playing Player Screen** and **Lyric Canvas**.
+
+```kotlin
+// Dynamic Player Theme Scoping
+@Composable
+fun ScopedPlayerTheme(
+    artworkBitmap: Bitmap?,
+    content: @Composable () -> Unit
+) {
+    val playerColors = remember(artworkBitmap) {
+        artworkBitmap?.let { DynamicPaletteEngine.extract(it) }
+            ?: DefaultPlayerColors
+    }
+
+    // Smoothly animate color scheme transitions when track changes
+    val animatedAccent by animateColorAsState(
+        targetValue = playerColors.accent,
+        animationSpec = tween(800, easing = FastOutSlowInEasing),
+        label = "AccentAnim"
+    )
+    val animatedDominant by animateColorAsState(
+        targetValue = playerColors.dominant,
+        animationSpec = tween(800, easing = FastOutSlowInEasing),
+        label = "DominantAnim"
+    )
+
+    CompositionLocalProvider(
+        LocalPlayerColors provides PlayerColors(
+            accent = animatedAccent,
+            dominant = animatedDominant,
+            secondary = playerColors.secondary
+        )
+    ) {
+        content()
+    }
+}
+```
+
 
 
 
