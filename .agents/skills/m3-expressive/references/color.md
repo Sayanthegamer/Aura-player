@@ -104,5 +104,33 @@ Because M3 assigns specific Tone gaps between containers and text, WCAG contrast
 * **Container to On-Container Contrast**:
   - Dark Theme: Container (`Tone 30`) + On-Container (`Tone 90`) $\to \Delta\text{Tone} = 60$ ($\ge 7:1$ contrast ratio).
   - Light Theme: Container (`Tone 90`) + On-Container (`Tone 10`) $\to \Delta\text{Tone} = 80$ ($\ge 10:1$ contrast ratio).
-* **Body Text to Surface Contrast**:
-  - Dark Theme: Surface (`Tone 6`) + OnSurface (`Tone 90`) $\to \Delta\text{Tone} = 84$ ($\ge 12:1$ contrast ratio).
+## 🎯 5. Choosing a Color Scheme: Static vs. Dynamic Variants
+
+Material 3 supports two primary scheme generation modes: **Dynamic Color** (derived from user wallpaper or media artwork) and **Static Color** (fixed brand palette).
+
+### A. The 6 Dynamic Scheme Variants
+
+| Variant Name | Intent / Aesthetic | Recommended Media Usage |
+|:---|:---|:---|
+| `Content` | Directly mirrors the exact hue and chroma of media artwork | **Now Playing player screen & artwork canvas** |
+| `Expressive` | Shifts Tertiary hue for maximum visual energy & contrast | **Audio DSP sheet & active karaoke lyrics** |
+| `Vibrant` | Maximizes Chroma across primary and tertiary accents | High-emphasis playback controls & FABs |
+| `Fidelity` | Retains exact seed color lightness & saturation without alteration | Custom theme previews |
+| `TonalSpot` | Balanced default Material You theme (moderate chroma) | Default library screens (Tracks, Albums, Artists) |
+| `Neutral` | Desaturates chroma for an ultra-clean, monochrome aesthetic | Minimalist / AMOLED dark mode |
+
+### B. Dynamic Color Decision Flow
+```
+                     User Plays Track
+                            │
+             Does Track Have Album Artwork?
+                     ┌──────┴──────┐
+                    YES            NO
+                     │             │
+           Extract Seed Color      Fallback to System Wallpaper
+          via Palette / HCT        (dynamicDarkColorScheme)
+                     │             or Static App Brand Color
+           Apply Content/Expressive
+           Scheme Variant to Player UI
+```
+
