@@ -382,12 +382,60 @@ Slider(
 
 ---
 
-## 📑 4. Sheets & Dialogs
+## 📑 3. Sheets Specifications (Modal & Standard Bottom Sheets, Side Sheets)
 
-### Modal Bottom Sheet (Audio DSP / Lyrics Options)
-* **Container**: `surfaceContainerLow` or `surfaceContainer`
-* **Drag Handle**: $32\text{dp} \times 4\text{dp}$ pill in `onSurfaceVariant.copy(alpha = 0.4f)`
-* **Shape**: `RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)`
+Based on official Material 3 Bottom Sheets and Side Sheets Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/*sheets/*`).
+
+### A. Sheet Variant Matrix
+
+| Sheet Variant | Container Token | Corner Radius | Drag Handle | Width / Placement | Primary Usage |
+|:---|:---|:---|:---|:---|:---|
+| **Modal Bottom Sheet** | `surfaceContainerLow` (Level 1) | **28 dp** (Top Corners) | $32\text{dp} \times 4\text{dp}$ Pill | 100% Mobile Width (Bottom) | **Audio DSP Equalizer Sheet**, Lyrics Options |
+| **Standard Bottom Sheet** | `surfaceContainerLow` (Level 1) | **28 dp** (Top Corners) | $32\text{dp} \times 4\text{dp}$ Pill | 100% Mobile Width (Bottom) | Collapsible Mini-Player $\to$ Now Playing Sheet |
+| **Side Sheet** (Modal / Standard) | `surfaceContainerLow` (Level 1) | **28 dp** (Inner Corners) | Optional | **256 dp – 400 dp** (Right/Left Side) | Large Screen / Tablet Queue & DSP Controls |
+
+### B. Structural & Drag Handle Tokens
+* **Top Corner Radius**: **28 dp** (`shape.extraLarge`).
+* **Drag Handle Dimensions**: **32 dp × 4 dp** pill (`onSurfaceVariant` with 40% alpha).
+* **Scrim Background**: Level 4 Scrim overlay (`Color.Black.copy(alpha = 0.32f)`).
+
+### C. Compose ModalBottomSheet Pattern
+
+```kotlin
+// Audio DSP Equalizer Modal Bottom Sheet
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AudioDspBottomSheet(
+    onDismiss: () -> Unit,
+    sheetState: SheetState = rememberModalBottomSheetState()
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+            )
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+        ) {
+            Text("16-Band Equalizer", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(16.dp))
+            // Vertical Equalizer Band Sliders
+        }
+    }
+}
+```
+
+### D. Accessibility
+* **Sheet Dismiss Semantics**: Swiping down past threshold, tapping background scrim, or pressing `Back` hardware button dismisses sheet cleanly.
+
 
 ---
 
