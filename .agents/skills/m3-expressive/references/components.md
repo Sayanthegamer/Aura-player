@@ -957,19 +957,20 @@ fun TrackListItemDivider() {
 
 ## ⏳ 16. Loading & Progress Indicators Specifications
 
-Based on official Material 3 Loading Indicators Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/loading-indicator/*`).
+Based on official Material 3 Progress Indicators Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/progress-indicators/*`).
 
 ### A. Progress Indicator Variant Matrix
 
-| Indicator Variant | Stroke / Height | Track Color | Active Color | Primary Usage |
-|:---|:---|:---|:---|:---|
-| **CircularProgressIndicator** | **4 dp** stroke | `surfaceContainerHighest` | `primary` | Lyrics fetching spinner, track buffering |
-| **LinearProgressIndicator** | **4 dp** height | `surfaceContainerHighest` | `primary` | **Media File Scanning Progress**, scrobble sync |
+| Indicator Variant | Dimensions / Stroke | Track Color | Active Color | Stop Indicator | Primary Usage |
+|:---|:---|:---|:---|:---|:---|
+| **CircularProgressIndicator** | **48 dp × 48 dp** ($4\text{dp}$ stroke) | `surfaceContainerHighest` | `primary` | N/A | Lyrics fetching spinner, track buffering |
+| **CircularProgressIndicator** (Small) | **24 dp × 24 dp** ($3\text{dp}$ stroke) | Transparent | `primary` | N/A | Inline button loading state |
+| **LinearProgressIndicator** | **4 dp** Height (or $8\text{dp}$ Expressive) | `surfaceContainerHighest` | `primary` | $4\text{dp}$ Dot | **Media File Scanning Progress**, scrobble sync |
 
 ### B. Compose Determinate & Indeterminate Patterns
 
 ```kotlin
-// 1. Determinate Linear Progress Indicator for Media Scanning
+// 1. Determinate Linear Progress Indicator with Stop Dot for Media Scanning
 @Composable
 fun MediaScanProgressBar(progress: Float, scannedCount: Int, totalCount: Int) {
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -980,9 +981,19 @@ fun MediaScanProgressBar(progress: Float, scannedCount: Int, totalCount: Int) {
         Spacer(Modifier.height(8.dp))
         LinearProgressIndicator(
             progress = { progress },
-            modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp)),
             color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            drawStopIndicator = {
+                // Draws M3 4dp stop dot at progress end position
+                drawStopIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    radius = 2.dp
+                )
+            }
         )
     }
 }
@@ -1002,7 +1013,8 @@ fun LyricsLoadingSpinner() {
 ```
 
 ### C. Accessibility
-* **Progress Semantics**: Set `progress = progressValue` on screen reader semantics so TalkBack announces completion percentage (e.g. `"Scanning library, 45 percent"`).
+* **Progress Semantics**: Set `progressBarRangeInfo = ProgressBarRangeInfo(current = progressValue, range = 0f..1f)` on accessibility semantics so TalkBack announces live percent updates (`"Scanning library, 45 percent"`).
+
 
 
 
