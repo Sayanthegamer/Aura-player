@@ -1,115 +1,118 @@
 # Material 3 Motion System, Easing & Transition Patterns
 
-Based on official [Material 3 Motion Guidelines](https://m3.material.io/styles/motion/overview/how-it-works).
+Based on official [Material 3 Motion Specs](https://m3.material.io/styles/motion/overview/specs), [Tokens Specs](https://m3.material.io/styles/motion/easing-and-duration/tokens-specs), and [Applying Transitions](https://m3.material.io/styles/motion/transitions/applying-transitions).
 
-## 🎬 1. Motion Principles: How It Works
+## 🎬 1. Motion Principles & Physics Parameters
 
-Material 3 Motion operates on three core principles:
+Material 3 Motion operates on three core principles: **Informative**, **Focused**, and **Expressive**.
 
-1. **Informative**: Guides the user by demonstrating spatial relationships, origins, and hierarchy between components.
-2. **Focused**: Directs attention to primary visual focal points without causing distraction.
-3. **Expressive**: Adds character, fluidity, and polish using dynamic spring physics and responsive easing curves.
+### Spring Physics Specifications
+
+| Animation Type | Target Properties | Stiffness Spec | Damping Ratio Spec |
+|:---|:---|:---|:---|
+| **Spatial / Bounds** | Position, Width, Height | `Spring.StiffnessLow` (300) | `Spring.DampingRatioNoBouncy` (1.0) |
+| **Tactile / Press** | Scale, Press Feedback | `Spring.StiffnessMedium` (1500) | `Spring.DampingRatioMediumBouncy` (0.65) |
+| **Fade / Opacity** | Alpha, Visibility | `Spring.StiffnessHigh` (10000) | `Spring.DampingRatioNoBouncy` (1.0) |
 
 ---
 
-## ⏳ 2. Easing Curves & Duration Scale
+## ⏳ 2. Complete M3 Easing & Duration Tokens
 
-### Easing Spec Table
+### Cubic Bezier Easing Tokens
 
-| Easing Category | Easing Curve Specification | Usage |
+```kotlin
+object M3Easing {
+    // Emphasized Easing (Primary layout morphs & screen expansions)
+    val Emphasized = CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)
+    val EmphasizedAccelerate = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
+    val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
+
+    // Standard Easing (Auxiliary controls & micro-interactions)
+    val Standard = CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)
+    val StandardAccelerate = CubicBezierEasing(0.3f, 0.0f, 1.0f, 1.0f)
+    val StandardDecelerate = CubicBezierEasing(0.0f, 0.0f, 0.0f, 1.0f)
+
+    // Legacy Easing
+    val LegacyStandard = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)
+}
+```
+
+### Complete Duration Scale Token Table
+
+| Token Name | Duration | Primary Usage |
 |:---|:---|:---|
-| **Emphasized** | `CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)` | Primary container morphing & screen expansions |
-| **Emphasized Accelerate** | `CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)` | Elements leaving the screen (Exit) |
-| **Emphasized Decelerate** | `CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)` | Elements entering the screen (Enter) |
-| **Standard** | `CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)` | Auxiliary controls, switches, and sliders |
-| **Standard Accelerate** | `CubicBezierEasing(0.3f, 0.0f, 1.0f, 1.0f)` | Small exit animations |
-| **Standard Decelerate** | `CubicBezierEasing(0.0f, 0.0f, 0.0f, 1.0f)` | Small enter animations |
+| `short1` | **50 ms** | Micro press scale feedback, icon ripple start |
+| `short2` | **100 ms** | Checkbox ticks, active indicator dot reveal |
+| `short3` | **150 ms** | Tooltip entry, popover menu fade |
+| `short4` | **200 ms** | Chip selection fill, small dropdown open |
+| `medium1` | **250 ms** | Card hover elevation shift |
+| `medium2` | **300 ms** | Standard card expand / collapse |
+| `medium3` | **350 ms** | Modal bottom sheet entry |
+| `medium4` | **400 ms** | Complex dialog reveal |
+| `long1` | **450 ms** | Navigation rail slide entry |
+| `long2` | **500 ms** | Full-screen page transition |
+| `long3` | **550 ms** | Shared element container morph |
+| `long4` | **600 ms** | Hero container expansion |
+| `extraLong1` | **700 ms** | Detailed sheet expansion |
+| `extraLong2` | **800 ms** | Ambient color transition |
+| `extraLong3` | **900 ms** | Liquid gradient morph |
+| `extraLong4` | **1000 ms** | Background Brownian motion cycle |
 
-### Duration Scale Specification
+---
+
+## 🔀 3. Applying Transitions: Timing Ratios & Rules
+
+When animating container morphs and screen transitions, follow these official timing rules:
+
+### A. The 35% / 65% Opacity Split Rule
+To prevent muddy overlapping content during container transform transitions:
+* **Outgoing Content**: Fades out completely during the **first 35%** of the transition duration.
+* **Incoming Content**: Fades in starting at 35% and completes over the **remaining 65%** of the duration.
 
 ```kotlin
-object M3MotionDurations {
-    const val Short1 = 50   // Icon press scale & micro-feedback
-    const val Short2 = 100  // Selection toggles & checkbox ticks
-    const val Short3 = 150  // Tooltip & chip appearance
-    const val Short4 = 200  // Small popover menus
-    const val Medium1 = 250 // Card selection fill
-    const val Medium2 = 300 // Standard card expansion / collapse
-    const val Medium3 = 350 // Modal bottom sheet entry
-    const val Medium4 = 400 // Complex dialog reveal
-    const val Long1 = 450   // Full-screen page transitions
-    const val Long2 = 500   // Activity transitions
-    const val Long3 = 600   // Shared element morphing
-    const val Long4 = 700   // Hero container expansion
-}
+// 35% / 65% Fade Split Spec in Compose
+val ContainerTransformFadeSpec = ContentTransform(
+    targetContentEnter = fadeIn(
+        animationSpec = tween(
+            durationMillis = (600 * 0.65).toInt(), // 390ms
+            delayMillis = (600 * 0.35).toInt(),    // 210ms
+            easing = M3Easing.EmphasizedDecelerate
+        )
+    ),
+    initialContentExit = fadeOut(
+        animationSpec = tween(
+            durationMillis = (600 * 0.35).toInt(), // 210ms
+            easing = M3Easing.EmphasizedAccelerate
+        )
+    )
+)
+```
+
+### B. Shared Bounds Overlay Clipping
+Always clip shared bounds to the target container shape during transition overlays to avoid visual bleed:
+
+```kotlin
+Modifier.sharedBounds(
+    sharedContentState = rememberSharedContentState(key = "player_bounds"),
+    animatedVisibilityScope = animatedVisibilityScope,
+    clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(16.dp))
+)
 ```
 
 ---
 
-## 🔀 3. The 4 M3 Transition Patterns
+## 🔀 4. The 4 M3 Transition Patterns
 
-Material 3 defines 4 standard transition patterns for navigation and layout changes:
+### Pattern 1: Container Transform (Morphing)
+Morphs one UI container into another (e.g. MiniPlayer -> Full Screen Player).
 
-### Pattern A: Container Transform (Morphing)
-Morphs one UI container into another (e.g. MiniPlayer -> Full Screen Player, Album Thumbnail -> Album Detail).
-
-```kotlin
-// Compose Shared Element Container Transform Pattern
-SharedTransitionLayout {
-    AnimatedContent(
-        targetState = currentScreen,
-        transitionSpec = {
-            fadeIn(animationSpec = tween(300, easing = M3Motion.EmphasizedDecelerate)) +
-            scaleIn(initialScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessLow)) togetherWith
-            fadeOut(animationSpec = tween(200, easing = M3Motion.EmphasizedAccelerate))
-        }
-    ) { screen ->
-        // Render screen with sharedBounds or sharedElement modifier
-    }
-}
-```
-
-### Pattern B: Shared Axis (X, Y, Z Axis Motion)
-Used for content with spatial or sequential relationships:
-* **X-Axis (Horizontal)**: Tab switching, step-by-step onboarding, album pagination.
+### Pattern 2: Shared Axis (X, Y, Z Axis Motion)
+* **X-Axis (Horizontal)**: Tab switching, album pagination.
 * **Y-Axis (Vertical)**: List sorting, filter expansions.
-* **Z-Axis (Depth)**: Entering a sub-level menu or hierarchy.
+* **Z-Axis (Depth)**: Sub-level menu entries.
 
-```kotlin
-// X-Axis Shared Axis Transition Spec (Forward navigation)
-val SharedAxisXForward = slideInHorizontally(
-    initialOffsetX = { width -> (width * 0.3f).toInt() },
-    animationSpec = tween(400, easing = M3Motion.EmphasizedDecelerate)
-) + fadeIn(animationSpec = tween(300)) togetherWith
-slideOutHorizontally(
-    targetOffsetX = { width -> -(width * 0.3f).toInt() },
-    animationSpec = tween(300, easing = M3Motion.EmphasizedAccelerate)
-) + fadeOut(animationSpec = tween(200))
-```
+### Pattern 3: Fade Through
+Used when switching non-spatial navigation destinations (e.g., Home -> Search -> Settings).
 
-### Pattern C: Fade Through
-Used when there is **no spatial relationship** between screens (e.g. switching main navigation sections like Home -> Search -> Settings).
-
-```kotlin
-// Fade Through Transition Spec
-val FadeThroughSpec = fadeIn(
-    animationSpec = tween(durationMillis = 210, delayMillis = 90, easing = M3Motion.EmphasizedDecelerate)
-) + scaleIn(
-    initialScale = 0.92f,
-    animationSpec = tween(durationMillis = 210, delayMillis = 90, easing = M3Motion.EmphasizedDecelerate)
-) togetherWith fadeOut(
-    animationSpec = tween(durationMillis = 90, easing = M3Motion.EmphasizedAccelerate)
-)
-```
-
-### Pattern D: Fade / Scale
-Used for UI elements that enter or exit within the screen bounds without a container (e.g., Dialogs, Floating Action Buttons, Context Menus).
-
-```kotlin
-// Fade / Scale Spec (Dialogs & Popovers)
-val FadeScaleEnter = fadeIn(animationSpec = tween(150)) + scaleIn(
-    initialScale = 0.8f,
-    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-)
-val FadeScaleExit = fadeOut(animationSpec = tween(100)) + scaleOut(targetScale = 0.8f)
-```
+### Pattern 4: Fade / Scale
+Used for dialogs, popovers, and FAB expansions.
