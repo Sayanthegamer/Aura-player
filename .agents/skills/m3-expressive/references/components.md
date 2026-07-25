@@ -1624,6 +1624,68 @@ fun LibraryTabRow(
 * **Tab Traversal & Selection**: TalkBack announces tab index and selection state (e.g. `"Albums, Selected, Tab 2 of 6"`).
 * **Swipe Connection**: Synchronize tab state with `HorizontalPager` so swiping pages updates active tab indicator smoothly.
 
+---
+
+## ✏️ 24. Text Fields Specifications (Filled & Outlined Input Fields)
+
+Based on official Material 3 Text Fields Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/text-fields/*`).
+
+### A. Text Field Variant Matrix
+
+| Text Field Variant | Container Token | Border / Active Line | Corner Radius | Primary Usage |
+|:---|:---|:---|:---|:---|
+| **OutlinedTextField** | Transparent | $1\text{dp}$ `outline` ($2\text{dp}$ focused `primary`) | **4 dp** (`extraSmall`) | **Playlist creation**, tag editor, rename dialogs |
+| **TextField** (Filled) | `surfaceContainerHighest` | $1\text{dp}$ Bottom line ($2\text{dp}$ focused `primary`) | **4 dp** Top corners | Quick settings input, inline forms |
+
+### B. Dimensions & Focus / Error Tokens
+* **Container Height**: Minimum **56 dp** height.
+* **Focused State**: Border/Line turns **2 dp** `primary` stroke, floating label turns `primary` (`bodySmall` / $12\text{sp}$).
+* **Error State**: Border/Line turns **2 dp** `error` stroke, supporting helper text turns `error`.
+* **Leading / Trailing Icons**: **24 dp × 24 dp** (`onSurfaceVariant`).
+
+### C. Compose OutlinedTextField Pattern
+
+```kotlin
+// Playlist Name Input Field inside Dialog
+@Composable
+fun PlaylistNameInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    errorMessage: String? = null
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text("Playlist Name") },
+        placeholder = { Text("e.g. Chill Synthwave") },
+        leadingIcon = { Icon(Icons.Default.QueueMusic, contentDescription = null) },
+        trailingIcon = {
+            if (value.isNotEmpty()) {
+                IconButton(onClick = { onValueChange("") }) {
+                    Icon(Icons.Default.Clear, contentDescription = "Clear input text")
+                }
+            }
+        },
+        isError = errorMessage != null,
+        supportingText = errorMessage?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        shape = RoundedCornerShape(4.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            errorBorderColor = MaterialTheme.colorScheme.error
+        ),
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+```
+
+### D. Accessibility
+* **Label Reading**: Screen readers announce field label, current text value, and error message state.
+* **IME Actions**: Pair with `KeyboardOptions(imeAction = ImeAction.Done)` to allow IME keyboard dismissal.
+
+
 
 
 
