@@ -708,9 +708,63 @@ fun GenreFilterChipRow(
 }
 ```
 
+## 📅 12. Date Pickers Specifications (Calendar Dialog & Range Picker)
+
+Based on official Material 3 Date Pickers Overview, Specs, Guidelines, and Accessibility (`m3.material.io/components/date-pickers/*`).
+
+### A. Date Picker Variant Matrix
+
+| Variant Name | Container Token | Corner Radius | Primary Usage |
+|:---|:---|:---|:---|
+| **DatePickerDialog** | `surfaceContainerHigh` (Level 3 / $6\text{dp}$) | **28 dp** (`extraLarge`) | Release date filtering, metadata edit |
+| **DateRangePicker** | `surfaceContainerHigh` (Level 3 / $6\text{dp}$) | **28 dp** (`extraLarge`) | Scrobble history date range filtering |
+| **DateInputPicker** | `surfaceContainerHigh` | **28 dp** (`extraLarge`) | Direct keyboard text date entry |
+
+### B. Dimensions & Selection Tokens
+* **Container Corner Radius**: **28 dp** (`shape.extraLarge`).
+* **Selected Day Circle**: **40 dp × 40 dp** (`primary` container + `onPrimary` text).
+* **Header Typography**: `headlineLarge` ($32\text{sp}$) for selected date readout.
+
+### C. Compose DatePickerDialog Pattern
+
+```kotlin
+// Date Picker Dialog for Filtering Tracks by Release Date
+@Composable
+fun TrackReleaseDatePickerDialog(
+    onDateSelected: (Long?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState()
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                onDateSelected(datePickerState.selectedDateMillis)
+                onDismiss()
+            }) {
+                Text("OK", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        shape = RoundedCornerShape(28.dp),
+        colors = DatePickerDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        )
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
+```
+
 ### D. Accessibility
-* **Selection State Announcement**: `FilterChip` automatically announces its selection state to TalkBack (e.g. `"Rock, selected, Filter Chip"`).
-* **Touch Boundary**: Padded vertically to enforce a $48\text{dp}$ touch target area.
+* **Grid Traversal**: Calendar grid supports full D-pad / keyboard arrow key traversal.
+* **Date Announcement**: Selected date readout automatically announces full date string to TalkBack (e.g. `"Selected, July 25, 2026"`).
+
 
 
 
