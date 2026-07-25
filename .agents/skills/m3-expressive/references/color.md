@@ -262,17 +262,52 @@ fun ScopedPlayerTheme(
         label = "DominantAnim"
     )
 
-    CompositionLocalProvider(
-        LocalPlayerColors provides PlayerColors(
-            accent = animatedAccent,
-            dominant = animatedDominant,
-            secondary = playerColors.secondary
-        )
-    ) {
-        content()
+## ⚡ 7. Advanced Color Manipulation & Contrast Adjustments
+
+Based on official [Advanced Color Overview](https://m3.material.io/styles/color/advanced/overview) and [Adjusting Existing Colors](https://m3.material.io/styles/color/advanced/adjust-existing-colors).
+
+### A. Programmatic HCT Adjustments (Lightness & Chroma Guards)
+
+When working with extracted artwork colors, raw seed colors can sometimes be too bright, too dark, or oversaturated. Use **HCT Programmatic Adjustments** to maintain design system boundaries:
+
+```kotlin
+import com.google.android.material.color.utilities.Hct
+
+object AdvancedColorUtils {
+
+    // 1. Lightness Guard: Clamp Tone to max 15 for dark mode surfaces
+    fun clampSurfaceTone(colorArgb: Int, maxTone: Double = 15.0): Int {
+        val hct = Hct.fromInt(colorArgb)
+        if (hct.tone > maxTone) {
+            val adjusted = Hct.from(hct.hue, hct.chroma, maxTone)
+            return adjusted.toInt()
+        }
+        return colorArgb
+    }
+
+    // 2. Chroma Guard: Keep Chroma within healthy range [16.0, 48.0]
+    fun sanitizeChroma(colorArgb: Int, minChroma: Double = 16.0, maxChroma: Double = 48.0): Int {
+        val hct = Hct.fromInt(colorArgb)
+        val clampedChroma = hct.chroma.coerceIn(minChroma, maxChroma)
+        return Hct.from(hct.hue, clampedChroma, hct.tone).toInt()
     }
 }
 ```
+
+---
+
+### B. Dynamic Contrast Modes (Android 14 / API 34+)
+
+Material 3 supports **Dynamic Contrast Levels** configured in system settings:
+
+| Contrast Mode | Target Contrast Delta | Usage / Target Audience |
+|:---|:---|:---|
+| `Standard` | $\Delta\text{Tone} \ge 60$ ($7:1$) | Default balanced aesthetic |
+| `Medium` | $\Delta\text{Tone} \ge 70$ ($10:1$) | Outdoor sunlight visibility & reduced strain |
+| `High` | $\Delta\text{Tone} \ge 85$ ($14:1$) | Maximum accessibility & visual impairment support |
+
+In Jetpack Compose, dynamic contrast levels automatically adjust `ColorScheme` tokens when using `dynamicDarkColorScheme(context)`.
+
 
 
 
