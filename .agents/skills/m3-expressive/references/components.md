@@ -153,8 +153,51 @@ FilledTonalIconButton(
 ```
 
 
-### D. Segmented Buttons (Audio EQ Presets)
-Used for mutually exclusive or multi-select option rows:
+### D. Segmented Buttons (Audio EQ & Library View Selectors)
+
+Based on official [Material 3 Segmented Buttons Specs](https://m3.material.io/components/segmented-buttons/specs) and [Guidelines](https://m3.material.io/components/segmented-buttons/guidelines).
+
+Used for selecting mutually exclusive options (Single-Choice) or toggling multiple active filters (Multi-Choice):
+
+#### Segmented Button State & Color Tokens
+
+| Segment State | Container Token | Content Token | Leading Icon | Border Stroke |
+|:---|:---|:---|:---|:---|
+| **Selected** | `secondaryContainer` | `onSecondaryContainer` | `Icons.Default.Check` | $1\text{dp}$ `outline` |
+| **Unselected** | Transparent | `onSurfaceVariant` | None | $1\text{dp}$ `outline` |
+
+#### Dimension & Corner Rules
+* **Container Height**: **40 dp**
+* **Outer Corners**: Full Pill (`9999.dp`) or $12\text{dp}$ (`shape.medium`).
+* **Inner Edges**: Shared flat edges computed via `SegmentedButtonDefaults.itemShape(index = index, count = totalCount)`.
+
+```kotlin
+// Single-Choice Segmented Button Row for Audio Equalizer Presets
+SingleChoiceSegmentedButtonRow(
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+) {
+    EqPreset.entries.forEachIndexed { index, preset ->
+        SegmentedButton(
+            selected = currentPreset == preset,
+            onClick = { onSelectPreset(preset) },
+            shape = SegmentedButtonDefaults.itemShape(index = index, count = EqPreset.entries.size),
+            colors = SegmentedButtonDefaults.colors(
+                activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                inactiveContainerColor = Color.Transparent,
+                inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            icon = {
+                if (currentPreset == preset) {
+                    SegmentedButtonDefaults.Icon(active = true)
+                }
+            }
+        ) {
+            Text(preset.displayName, style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+```
 
 ### E. Button Groups (Connected vs. Separated Group Specifications)
 
